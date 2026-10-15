@@ -1,0 +1,11 @@
+******************************************************************************
+AdminLog started on 2026-10-14 at 23:56:00
+23:57:00 | Player "SYNTH_Explorer" (id=SYNTH_ID_001 pos=<12210.5, 7432.0, 52.1>)
+23:58:03 | Player "SYNTH_Medic" (id=SYNTH_ID_002 - pos=<9133.1, 6500.4, 27.5>)
+23:58:08 | Player "SYNTH_Explorer" (id=SYNTH_ID_001) is connected
+23:58:19 | Player "SYNTH_Medic" (id=SYNTH_ID_002) is connected
+23:58:55 | ##### PlayerList log: 2 players
+00:01:20 | Player "SYNTH_Explorer" (id=SYNTH_ID_001 pos=<11880.1, 7810.3, 41.8>)
+00:02:30 | Player "SYNTH_Medic" (id=SYNTH_ID_002 - pos=<9412.4, 6711.6, 39.0>)
+00:03:01 | Player "SYNTH_Explorer" (id=SYNTH_ID_001) has been disconnected
+00:04:05 | Unknown administrative event sample
