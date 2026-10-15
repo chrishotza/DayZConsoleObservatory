@@ -69,3 +69,59 @@ class ChronologicalOrderingTests(unittest.TestCase):
             ingest(db, latest)
             ingest(db, earlier)
             self.assertEqual(get_events(db)[0]['occurred_at'],'2026-10-15T12:03:00')
+
+
+
+# A Nitrado download replaces the local log atomically (new inode).
+class AtomicDownloadRegressionTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.log = Path(self.tmp.name) / "log.ADM"
+        self.db = Path(self.tmp.name) / "db.sqlite"
+
+    def replace(self, payload):
+        import os
+        part = self.log.with_suffix(".part")
+        part.write_bytes(payload)
+        os.replace(part, self.log)
+
+    def test_atomic_append_preserves_event_ids(self):
+        original = (b'AdminLog started on 2026-10-15 at 12:00:00\n'
+                    b'12:01:00 | Player "Tester" (id=INTERNAL_ID pos=<1, 2, 3>)\n')
+        self.log.write_bytes(original)
+        initial = ingest(self.db, self.log)
+        self.replace(original + b'12:06:00 | Player "Tester" (id=INTERNAL_ID pos=<2, 3, 4>)\n')
+        update = ingest(self.db, self.log)
+        self.assertFalse(update["rotated"])
+        self.assertEqual(update["new_events"], 1)
+        self.assertEqual(initial["generation"], update["generation"])
+        self.assertEqual(len(get_events(self.db)), 2)
+
+    def test_rewrite_after_same_prefix_triggers_rotation(self):
+        same = (b'AdminLog started on 2026-10-15 at 12:00:00\n'
+                + b'12:00:00 | ' + b'A' * 145 + b'\n')
+        self.log.write_bytes(same + b'12:01:00 | before\n')
+        original = ingest(self.db, self.log)
+        self.replace(same + b'12:01:00 | after\n')
+        update = ingest(self.db, self.log)
+        self.assertTrue(update["rotated"])
+        self.assertEqual(update["generation"], original["generation"] + 1)
+
+    def test_legacy_sources_schema_migrates_in_place(self):
+        import sqlite3
+        from contextlib import closing
+        with closing(sqlite3.connect(self.db)) as connection:
+            connection.execute("""CREATE TABLE sources (
+                server TEXT NOT NULL, path TEXT NOT NULL,
+                generation INTEGER NOT NULL DEFAULT 0, offset INTEGER NOT NULL DEFAULT 0,
+                device INTEGER NOT NULL DEFAULT 0, inode INTEGER NOT NULL DEFAULT 0,
+                prefix BLOB NOT NULL DEFAULT X'', base_date TEXT,
+                last_second INTEGER, rollover INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (server,path)
+            )""")
+        self.log.write_text("AdminLog started on 2026-10-15 at 12:00:00\n12:01:00 | event\n")
+        self.assertEqual(ingest(self.db, self.log)["new_events"], 1)
+        with closing(sqlite3.connect(self.db)) as connection:
+            cols = [r[1] for r in connection.execute("PRAGMA table_info(sources)")]
+        self.assertIn("content_hash", cols)
