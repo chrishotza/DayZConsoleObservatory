@@ -9,6 +9,7 @@ from .store import ingest, get_quality_report
 from .server import serve
 from .nitrado import NitradoClient, NitradoError
 from .investigate import player_history
+from .sync import sync_once
 
 
 def main(argv=None) -> None:
@@ -38,6 +39,9 @@ def main(argv=None) -> None:
     n.add_argument("--server")
     n.add_argument("--list-only", action="store_true", help="List available logs, do not download")
     n.add_argument("--include-rpt", action="store_true", help="Download RPT too (contains sensitive identifiers)")
+    n.add_argument("--max-files", type=int, default=3, help="Mirror up to N recent files (max 20)")
+    n.add_argument("--dry-run", action="store_true", help="Preview only; write no local files")
+    n.add_argument("--force", action="store_true", help="Ignore cached copy and download again")
     args = p.parse_args(argv)
     try:
         if args.cmd == "ingest":
@@ -50,26 +54,17 @@ def main(argv=None) -> None:
             print(json.dumps(get_quality_report(args.db, args.server), indent=2))
         elif args.cmd == "nitrado":
             api = NitradoClient()
-            directory, info = api.discover_log_directory(args.service_id)
-            files = api.list_logs(args.service_id,directory)
             if args.list_only:
-                print(json.dumps({"game":info.get("game"),"files":[e.get("name") for e in files]},indent=2))
+                directory, info = api.discover_log_directory(args.service_id)
+                available = api.list_logs(args.service_id, directory)
+                print(json.dumps({"game": info.get("game"), "files": [e.get("name") for e in available]}, indent=2))
                 return
-            target = Path(args.out).resolve()
-            target.mkdir(parents=True,exist_ok=True)
-            server = args.server or str(args.service_id)
-            adm_files = [f for f in files if str(f.get("name","")).lower().endswith(".adm")]
-            rpt_files = [f for f in files if str(f.get("name","")).lower().endswith(".rpt")]
-            selected = sorted(adm_files,key=lambda e:str(e.get("modified_at", "")),reverse=True)[:1]
-            if args.include_rpt:
-                selected += sorted(rpt_files,key=lambda e:str(e.get("modified_at", "")),reverse=True)[:1]
-            for e in selected:
-                name = Path(str(e["name"])).name
-                remote = str(e["path"])
-                local = api.download_log(args.service_id,remote,target/name,directory)
-                print(f"Downloaded {name}")
-                if name.lower().endswith(".adm"):
-                    print(json.dumps(ingest(args.db,local,server),indent=2))
+            report = sync_once(api, args.service_id, output=args.out, db=args.db,
+                               server=args.server, max_files=args.max_files,
+                               include_rpt=args.include_rpt, dry_run=args.dry_run, force=args.force)
+            print(json.dumps(report, indent=2))
+            if report["errors"]:
+                raise SystemExit(2)
     except (OSError,NitradoError,KeyError,ValueError) as exc:
         print(f"Error: {exc}",file=sys.stderr)
         raise SystemExit(1) from None

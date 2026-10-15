@@ -4,7 +4,7 @@
 
 Not a cheat or an in-game admin mod. Designed for the Microsoft/Xbox version where Steam Workshop mods are unavailable.
 
-> Status: **v0.2 / early development / read-only**. Offline tests pass; the Nitrado connector **has not been validated with a real owner's token or live DayZ Xbox service**. Do not deploy for production moderation without verification.
+> Status: **v0.4 / early development / read-only**. Offline tests pass; the Nitrado connector **has not been validated with a real owner's token or live DayZ Xbox service**. Do not deploy for production moderation without verification.
 
 ## What works today
 
@@ -13,7 +13,7 @@ Not a cheat or an in-game admin mod. Designed for the Microsoft/Xbox version whe
 - SQLite persistence, independent servers, byte-offset deduplication, partial lines, truncation, basic log rotation and midnight transitions.
 - Local dashboard at `127.0.0.1`, showing the most recent **historical** player positions on a *schematic coordinate plot*, filterable administrative events, and a **player investigation selector** with session timeline. **This is not a textured map nor a live ESP overlay.**
 - Read-only per-player incident export via `dayz-observe investigate PLAYER_ID --db observatory.db --server default`. It reconstructs connect/disconnect *log sessions*, explicitly flags missing evidence, and never claims a player is currently online.
-- Experimental read-only Nitrado connection for `dayzxb`: game service metadata, directory listing and ADM download using OAuth bearer token.
+- Read-only Nitrado sync for `dayzxb`: multiple recent logs, local SHA-256 plus remote size/mtime cache, dry-run, and bounded HTTP 429/503 retry.
 - No required third-party Python packages for local operation.
 
 ### Known limitations
@@ -22,7 +22,7 @@ Not a cheat or an in-game admin mod. Designed for the Microsoft/Xbox version whe
 - Most logs contain server-local timestamps with no explicit timezone; the UI does **not** claim UTC or calculate a misleading age.
 - Log classification is deliberately conservative. Unknown lines are kept for future parser development, but not all damage/build log grammars are supported yet.
 - The dashboard is a coordinate plane, not licensed DayZ terrain imagery. Mapping profiles including Nasdara will need verified transforms and legally reusable tiles.
-- The Nitrado adapter currently downloads the newest ADM in full; partial `seek` optimization and real-host compatibility tests are pending.
+- The Nitrado adapter downloads up to three recent ADM logs by default (up to 20 with `--max-files`). It skips unchanged full downloads only when remote size and mtime are usable. **Remote byte-range `seek` is not implemented**. A same-size rewrite with unchanged mtime requires `--force` to detect.
 - Truncation and inode/prefix checks cover common rotation scenarios; an overwritten log with identical prefix, inode and length is not detectable by this v0.1 mechanism.
 - No ban/whitelist writes, online player state modification, ESP-in-game, free camera, invisibility, or teleports. This project must not claim to provide undocumented console APIs.
 
@@ -75,12 +75,13 @@ dayz-observe nitrado 12345678 --list-only
 When listing has been validated against your account:
 
 ```bash
+dayz-observe nitrado 12345678 --dry-run --out private-logs --db observatory.db
 dayz-observe nitrado 12345678 --out private-logs --db observatory.db
 # View a specific server ID, e.g. one matching your Nitrado service ID:
 dayz-observe dashboard --server 12345678 --db observatory.db
 ```
 
-The experimental adapter expects the `dayzxb` Nitrado game type and reads its `config` folder. If your host provides another format or download CDN domain, **do not bypass the safety check**: open an issue with redacted endpoint metadata.
+Read [owner-only field validation](docs/NITRADO_VALIDATION.md). Use `--max-files 8` to include recent rotated files, `--force` to re-download, and `--include-rpt` to explicitly opt in to sensitive RPT logs. The experimental adapter expects the `dayzxb` Nitrado game type and reads its `config` folder. If your host provides another format or download CDN domain, **do not bypass the safety check**: open an issue with redacted endpoint metadata.
 
 ## Architecture
 
@@ -100,10 +101,10 @@ The experimental adapter expects the `dayzxb` Nitrado game type and reads its `c
 
 ## Roadmap
 
-1. **v0.2 (delivered locally + to be pushed):** Player/session timeline for offline incident review, player filter in dashboard, CLI/HTTP query, offline tests.
-2. **v0.3:** Validate Nitrado adapter with real-owner testing and fixtures; add rate-limit recovery and safe partial download (`seek`), data retention controls.
-3. **v0.4:** Map overlays using properly licensed tiles per terrain (Chernarus, Livonia, Sakhal, Nasdara), with exact alignment tests.
-4. **v0.5:** Optional role-protected server-management actions supported by Nitrado, with explicit confirmation, audit logging and test-only modes.
+1. **v0.1–v0.3:** Parser, SQLite, investigation timeline, reliability/security and CI.
+2. **v0.4 (offline-tested):** Multi-file log synchronization, metadata-based caching, safe dry-run/force, bounded HTTP retry and regression tests.
+3. **Next:** Validate Nitrado permissions and genuine log behaviors with a consenting server owner. Implement remote partial reads only after official API verification.
+4. **Later:** Properly licensed map imagery, privacy retention controls and any officially supported moderation integration.
 
 ## References
 

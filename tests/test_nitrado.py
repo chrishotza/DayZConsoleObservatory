@@ -102,6 +102,32 @@ class NitradoTests(unittest.TestCase):
             None,None,302,'Found',{},'https://evil.com/steal') if hasattr(self.client._opener.handlers[0], 'redirect_request') else None)
         self.assertTrue(any(type(h).__name__ == '_RejectRedirects' for h in self.client._opener.handlers))
 
+    def test_json_retry_429_is_bounded(self):
+        error = urllib.error.HTTPError('https://api.nitrado.net/any', 429, 'Too Many Requests', {'Retry-After': '2'}, None)
+        with patch.object(self.client, '_open', side_effect=[error, FakeResponse(b'{"data":{}}')]) as opened, \
+             patch('dayz_observatory.nitrado.time.sleep') as sleep:
+            self.assertEqual(self.client._json('/services/1/gameservers'), {'data': {}})
+        self.assertEqual(opened.call_count, 2)
+        sleep.assert_called_once_with(2)
+
+    def test_long_retry_after_does_not_retry(self):
+        error = urllib.error.HTTPError('https://api.nitrado.net/any', 429, 'Too Many Requests', {'Retry-After': '3600'}, None)
+        with patch.object(self.client, '_open', side_effect=error) as opened, \
+             patch('dayz_observatory.nitrado.time.sleep') as sleep:
+            with self.assertRaisesRegex(NitradoError, '429'):
+                self.client._json('/services/1/gameservers')
+        opened.assert_called_once()
+        sleep.assert_not_called()
+
+    def test_503_retries_once_only(self):
+        error = urllib.error.HTTPError('https://api.nitrado.net/any', 503, 'Unavailable', {}, None)
+        with patch.object(self.client, '_open', side_effect=[error, error]) as opened, \
+             patch('dayz_observatory.nitrado.time.sleep') as sleep:
+            with self.assertRaisesRegex(NitradoError, '503'):
+                self.client._json('/services/1/gameservers')
+        self.assertEqual(opened.call_count, 2)
+        sleep.assert_called_once_with(1)
+
     def test_download_validates_host(self):
         bad = ('https://evil.com/file', 'https://nitrado.net.evil.com/file',
                'http://nitrado.net/file', 'https://admin:pw@nitrado.net/file',

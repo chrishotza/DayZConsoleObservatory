@@ -21,7 +21,7 @@ No game installation or service credentials are needed to run tests. Nitrado int
 - The downloaded filename must be an `.ADM` or `.RPT` file directly inside the discovered DayZ Xbox log directory. Relative path traversal and nested directories are rejected.
 - API JSON responses are capped at 2 MiB; downloaded logs are capped at 50 MiB.
 - Downloads use an atomic temporary file in the destination directory. A failed download preserves the previously downloaded file; the partial temporary file is deleted.
-- HTTP errors do not include request URLs or tokens in error messages. HTTP 429 means slow down and retry manually; no unbounded automatic request loop is used.
+- HTTP errors do not include request URLs or tokens in error messages. HTTP 429 and 503 permit only one bounded JSON metadata GET retry, honoring numeric Retry-After up to 5 seconds. Signed file downloads are not retried automatically.
 
 ### Local application
 
@@ -48,7 +48,7 @@ Passing these tests **does not establish that Nitrado grants the necessary endpo
 ## Known open problems
 
 1. Live Nitrado permission and host compatibility still need field testing by an authorized server owner.
-2. The current adapter fetches the newest ADM in full. Nitrado partial `seek` reads are not yet integrated; do not claim incremental remote downloads.
+2. The adapter downloads several recent whole ADM files, avoiding repeated downloads when remote size+mtime and local SHA-256 match. Remote `seek` is not integrated. The remote source could change despite identical metadata, requiring `--force`.
 3. Source-file rewrite detection handles inode changes, truncation and prefix changes. Same-size rewrites retaining an identical prefix remain a limitation.
 4. No actual in-game spectate, ESP, invisibility, teleport or privileged admin action is exposed by the project.
 5. No approved Bohemia, Nitrado, Microsoft/Xbox or BattlEye partnership exists. [An official API proposal](BOHEMIA_ADMIN_API_PROPOSAL.md) is maintained separately and does not itself grant permission.

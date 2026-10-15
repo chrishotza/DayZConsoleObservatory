@@ -29,3 +29,9 @@ No client injection, anticheat bypass, unauthorized client memory access, in-gam
 
 ## Naming
 Public project: DayZ Console Observatory. GitHub slug suggestion: `dayz-console-observatory`. Python distribution: `dayz-console-observatory`. Binary: `dayz-observe`.
+
+## v0.4 integration
+- `src/dayz_observatory/sync.py` offers read-only whole-file caching based on remote size/mtime and local SHA-256.
+- `dayz-observe nitrado SERVICE_ID --dry-run` previews downloads without writing local files.
+- `--include-rpt` is opt-in; remote range `seek` is NOT implemented. Never describe log coordinates as live ESP.
+- Validate without DayZ: `python -W error::ResourceWarning -m unittest discover -s tests -v`.

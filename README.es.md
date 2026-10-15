@@ -2,7 +2,7 @@
 
 Herramienta **gratuita, abierta e independiente** para supervisar servidores comunitarios de **DayZ Microsoft Store PC / Xbox** sin modificar el cliente del juego.
 
-> **Versión 0.2, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
+> **Versión 0.4, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
 
 ## Funciones que ya incluye
 
@@ -12,7 +12,7 @@ Herramienta **gratuita, abierta e independiente** para supervisar servidores com
 - Gráfico X/Z local de las **últimas posiciones registradas**, no posiciones en vivo.
 - Panel para revisar eventos administrativos y seleccionar un jugador para investigar su historial, posiciones y sesiones registradas.
 - Comando `dayz-observe investigate ID_JUGADOR --db observatory.db` para exportar un historial JSON.
-- Conector Nitrado de solo lectura para investigar el acceso a registros en servicios `dayzxb`.
+- Sincronización Nitrado de solo lectura para `dayzxb`: varios ADM recientes, caché SHA-256/metadatos, modo vista previa y reintentos HTTP limitados. El lector remoto de rangos `seek` aún no está implementado.
 
 ## Comenzar con datos de demostración
 
@@ -38,9 +38,12 @@ dayz-observe nitrado 12345678 --list-only
 Reemplazá `12345678` por el ID de tu servicio. La primera operación solo lista archivos. Si se confirma que funciona en tu servicio:
 
 ```powershell
+dayz-observe nitrado 12345678 --dry-run --out private-logs --db observatory.db
 dayz-observe nitrado 12345678 --out private-logs --db observatory.db
 dayz-observe dashboard --db observatory.db --server 12345678
 ```
+
+La segunda sincronización puede reutilizar los archivos locales si Nitrado informa tamaño y fecha válidos. Usá `--max-files 8` para ampliar el historial, `--force` para revalidar y `--include-rpt` solo si necesitás manejar datos sensibles. Consultá [docs/NITRADO_VALIDATION.md](docs/NITRADO_VALIDATION.md).
 
 **Limitaciones importantes:** Los logs normalmente registran posiciones de jugadores cada cinco minutos. No equivalen a ESP en tiempo real, cámara libre, invisibilidad ni teletransporte. La versión Microsoft/Xbox no admite mods de Steam y este programa no intenta evadir el anticheat. Tampoco incluye imágenes oficiales de mapas que no tengamos permiso de reutilizar.
 

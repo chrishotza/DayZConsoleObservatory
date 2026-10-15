@@ -12,6 +12,7 @@ from pathlib import Path
 import posixpath
 import re
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -61,21 +62,32 @@ class NitradoClient:
         request = urllib.request.Request(url, headers={
             "Authorization": "Bearer " + self.token,
             "Accept": "application/json",
-            "User-Agent": "dayz-console-observatory/0.3",
+            "User-Agent": "dayz-console-observatory/0.4",
         })
-        try:
-            with self._open(request) as response:
-                payload = response.read(MAX_API_BYTES + 1)
-                if len(payload) > MAX_API_BYTES:
-                    raise NitradoError("Nitrado API response exceeds the 2 MiB safety limit")
-                data = json.loads(payload)
-                if not isinstance(data, dict):
-                    raise NitradoError("Unexpected API response shape")
-                return data
-        except urllib.error.HTTPError as exc:
-            raise NitradoError(f"Nitrado API HTTP {exc.code} while reading {path}") from None
-        except (urllib.error.URLError, OSError, ValueError) as exc:
-            raise NitradoError(f"Nitrado API unavailable: {exc.__class__.__name__}") from None
+        for attempt in range(2):
+            try:
+                with self._open(request) as response:
+                    payload = response.read(MAX_API_BYTES + 1)
+                    if len(payload) > MAX_API_BYTES:
+                        raise NitradoError("Nitrado API response exceeds the 2 MiB safety limit")
+                    data = json.loads(payload)
+                    if not isinstance(data, dict):
+                        raise NitradoError("Unexpected API response shape")
+                    return data
+            except urllib.error.HTTPError as exc:
+                if exc.code in (429, 503) and attempt == 0:
+                    retry_after = exc.headers.get("Retry-After", "") if exc.headers else ""
+                    try:
+                        delay = max(1, int(retry_after)) if retry_after else 1
+                    except (TypeError, ValueError):
+                        delay = 1
+                    if delay <= 5:
+                        time.sleep(delay)
+                        continue
+                raise NitradoError(f"Nitrado API HTTP {exc.code} while reading {path}") from None
+            except (urllib.error.URLError, OSError, ValueError) as exc:
+                raise NitradoError(f"Nitrado API unavailable: {exc.__class__.__name__}") from None
+        raise NitradoError("Nitrado API request retries exhausted")
 
     def gameserver(self, service_id: int) -> dict:
         data = self._json(f"/services/{self._service_id(service_id)}/gameservers")
