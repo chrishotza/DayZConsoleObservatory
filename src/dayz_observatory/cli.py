@@ -10,6 +10,7 @@ from .server import serve
 from .nitrado import NitradoClient, NitradoError
 from .investigate import player_history
 from .sync import sync_once
+from .beta import probe_nitrado, offline_beta_report
 
 
 def main(argv=None) -> None:
@@ -32,12 +33,17 @@ def main(argv=None) -> None:
     audit = sub.add_parser("audit", help="Inspect evidence quality without DayZ or Nitrado")
     audit.add_argument("--db", default="observatory.db")
     audit.add_argument("--server", default="default")
+    beta = sub.add_parser("beta-report", help="Print privacy-safe aggregate counts from local data")
+    beta.add_argument("--db", default="observatory.db")
+    beta.add_argument("--server", default="default")
     n = sub.add_parser("nitrado", help="Inspect/download official Xbox service logs (read only)")
     n.add_argument("service_id", type=int)
     n.add_argument("--out", default="private-logs")
     n.add_argument("--db", default="observatory.db")
     n.add_argument("--server")
-    n.add_argument("--list-only", action="store_true", help="List available logs, do not download")
+    mode = n.add_mutually_exclusive_group()
+    mode.add_argument("--list-only", action="store_true", help="List available logs, do not download")
+    mode.add_argument("--probe", action="store_true", help="Anonymized beta connectivity diagnostic")
     n.add_argument("--include-rpt", action="store_true", help="Download RPT too (contains sensitive identifiers)")
     n.add_argument("--max-files", type=int, default=3, help="Mirror up to N recent files (max 20)")
     n.add_argument("--dry-run", action="store_true", help="Preview only; write no local files")
@@ -52,8 +58,13 @@ def main(argv=None) -> None:
             print(json.dumps(player_history(args.db, args.server, args.player_id, args.limit), indent=2))
         elif args.cmd == "audit":
             print(json.dumps(get_quality_report(args.db, args.server), indent=2))
+        elif args.cmd == "beta-report":
+            print(json.dumps(offline_beta_report(args.db, args.server), indent=2))
         elif args.cmd == "nitrado":
             api = NitradoClient()
+            if args.probe:
+                print(json.dumps(probe_nitrado(api, args.service_id), indent=2))
+                return
             if args.list_only:
                 directory, info = api.discover_log_directory(args.service_id)
                 available = api.list_logs(args.service_id, directory)

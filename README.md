@@ -4,7 +4,7 @@
 
 Not a cheat or an in-game admin mod. Designed for the Microsoft/Xbox version where Steam Workshop mods are unavailable.
 
-> Status: **v0.4 / early development / read-only**. Offline tests pass; the Nitrado connector **has not been validated with a real owner's token or live DayZ Xbox service**. Do not deploy for production moderation without verification.
+> Status: **v0.4.1 / early development / read-only**. Offline tests pass; the Nitrado connector **has not been validated with a real owner's token or live DayZ Xbox service**. Do not deploy for production moderation without verification.
 
 ## What works today
 
@@ -27,6 +27,12 @@ Not a cheat or an in-game admin mod. Designed for the Microsoft/Xbox version whe
 - No ban/whitelist writes, online player state modification, ESP-in-game, free camera, invisibility, or teleports. This project must not claim to provide undocumented console APIs.
 
 Para instrucciones en español, consulta [README.es.md](README.es.md).
+
+## Community beta: Xbox / Microsoft Store server volunteers wanted
+
+Seeking **3–5 Nitrado community server owners** to field-test our read-only integration. You never need to send us a token, server login, or player logs. You can test without DayZ using `dayz-observe beta-report --db observatory.db`. Owners may optionally test `dayz-observe nitrado YOUR_ID --probe`, which prints only anonymous metadata counts and never downloads logs.
+
+Read the [community beta guide](docs/COMMUNITY_BETA.md) and [submit a beta report](https://github.com/chrishotza/DayZConsoleObservatory/issues/new/choose). Our Nitrado connector still needs independent live-server validation.
 
 ## Quick start (offline demo)
 
