@@ -11,6 +11,7 @@ from .nitrado import NitradoClient, NitradoError
 from .investigate import player_history
 from .sync import sync_once
 from .beta import probe_nitrado, offline_beta_report
+from .selftest import run_selftest, SelfTestError
 
 
 def main(argv=None) -> None:
@@ -36,6 +37,7 @@ def main(argv=None) -> None:
     beta = sub.add_parser("beta-report", help="Print privacy-safe aggregate counts from local data")
     beta.add_argument("--db", default="observatory.db")
     beta.add_argument("--server", default="default")
+    sub.add_parser("selftest", help="Fully offline Nitrado integration check (no token, game or network)")
     n = sub.add_parser("nitrado", help="Inspect/download official Xbox service logs (read only)")
     n.add_argument("service_id", type=int)
     n.add_argument("--out", default="private-logs")
@@ -60,6 +62,8 @@ def main(argv=None) -> None:
             print(json.dumps(get_quality_report(args.db, args.server), indent=2))
         elif args.cmd == "beta-report":
             print(json.dumps(offline_beta_report(args.db, args.server), indent=2))
+        elif args.cmd == "selftest":
+            print(json.dumps(run_selftest(), indent=2))
         elif args.cmd == "nitrado":
             api = NitradoClient()
             if args.probe:
@@ -76,7 +80,7 @@ def main(argv=None) -> None:
             print(json.dumps(report, indent=2))
             if report["errors"]:
                 raise SystemExit(2)
-    except (OSError,NitradoError,KeyError,ValueError) as exc:
+    except (OSError,NitradoError,SelfTestError,KeyError,ValueError) as exc:
         print(f"Error: {exc}",file=sys.stderr)
         raise SystemExit(1) from None
 

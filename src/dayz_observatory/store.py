@@ -2,6 +2,7 @@
 from __future__ import annotations
 from pathlib import Path
 from contextlib import contextmanager
+import hashlib
 import sqlite3
 from .parser import parse_header, parse_line, event_datetime
 from datetime import date
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS sources (
  device INTEGER NOT NULL DEFAULT 0,
  inode INTEGER NOT NULL DEFAULT 0,
  prefix BLOB NOT NULL DEFAULT X'',
+ content_hash TEXT,
  base_date TEXT,
  last_second INTEGER,
  rollover INTEGER NOT NULL DEFAULT 0,
@@ -43,6 +45,10 @@ def connect(db_path: str | Path):
     db.row_factory = sqlite3.Row
     try:
         db.executescript(DDL)
+        # Upgrade older databases without losing evidence.
+        columns = {row[1] for row in db.execute('PRAGMA table_info(sources)')}
+        if 'content_hash' not in columns:
+            db.execute('ALTER TABLE sources ADD COLUMN content_hash TEXT')
         with db:
             yield db
     finally:
@@ -67,11 +73,29 @@ def ingest(db_path: str | Path, source: str | Path, server: str="default") -> di
             base_date = date.fromisoformat(row["base_date"]) if row and row["base_date"] else None
             # Compare the prefix to the original prefix length (growth isn't a rewrite).
             prev_prefix = bytes(row["prefix"]) if row else b""
-            rotated = bool(row and (
+            identity_changed = bool(row and (
                 (stat.st_ino != row["inode"] and row["inode"] != 0) or
-                (stat.st_dev != row["device"] and row["device"] != 0) or
-                stat.st_size < offset or
-                current_prefix[:len(prev_prefix)] != prev_prefix
+                (stat.st_dev != row["device"] and row["device"] != 0)
+            ))
+            prefix_changed = bool(row and current_prefix[:len(prev_prefix)] != prev_prefix)
+            # Downloads are atomic replacements: changed inode alone does not
+            # prove a rotated file. Confirm ALL consumed bytes are unchanged.
+            continued = False
+            if row and identity_changed and not prefix_changed and stat.st_size >= offset:
+                saved_hash = row["content_hash"]
+                if saved_hash:
+                    fh.seek(0)
+                    digest = hashlib.sha256()
+                    remaining = offset
+                    while remaining:
+                        block = fh.read(min(256 * 1024, remaining))
+                        if not block:
+                            break
+                        digest.update(block)
+                        remaining -= len(block)
+                    continued = remaining == 0 and digest.hexdigest() == saved_hash
+            rotated = bool(row and (
+                stat.st_size < offset or prefix_changed or (identity_changed and not continued)
             ))
             if rotated:
                 generation += 1
@@ -103,14 +127,24 @@ def ingest(db_path: str | Path, source: str | Path, server: str="default") -> di
                      event.player_name,event.player_id,event.x,event.z,event.altitude,event.raw))
                 stored += int(cursor.rowcount > 0)
             next_offset = fh.tell()
-            # Freeze the prefix at first read; a short file can grow without changing its prefix.
+            # Hash the fully-consumed prefix. Same leading 128 bytes is not
+            # enough to trust a rewritten log as an append.
+            fh.seek(0)
+            digest = hashlib.sha256()
+            remaining = next_offset
+            while remaining:
+                block = fh.read(min(256 * 1024, remaining))
+                if not block:
+                    raise OSError("Log changed while computing snapshot digest")
+                digest.update(block)
+                remaining -= len(block)
             prefix = current_prefix if rotated or not row else prev_prefix
-            db.execute("""INSERT INTO sources(server,path,generation,offset,device,inode,prefix,base_date,last_second,rollover)
-                VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(server,path) DO UPDATE SET
+            db.execute("""INSERT INTO sources(server,path,generation,offset,device,inode,prefix,content_hash,base_date,last_second,rollover)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(server,path) DO UPDATE SET
                 generation=excluded.generation,offset=excluded.offset,device=excluded.device,
-                inode=excluded.inode,prefix=excluded.prefix,base_date=excluded.base_date,
-                last_second=excluded.last_second,rollover=excluded.rollover""",
-                (server,str(file),generation,next_offset,stat.st_dev,stat.st_ino,prefix,
+                inode=excluded.inode,prefix=excluded.prefix,content_hash=excluded.content_hash,
+                base_date=excluded.base_date,last_second=excluded.last_second,rollover=excluded.rollover""",
+                (server,str(file),generation,next_offset,stat.st_dev,stat.st_ino,prefix,digest.hexdigest(),
                  base_date.isoformat() if base_date else None,last_second,rollover))
             return {"source":str(file),"server":server,"read_events":parsed,"new_events":stored,
                     "offset":next_offset,"generation":generation,"rotated":rotated}

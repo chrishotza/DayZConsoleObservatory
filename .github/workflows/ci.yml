@@ -25,5 +25,6 @@ jobs:
           python -m compileall -q src tests
           python -m pip check
           dayz-observe --version
+          dayz-observe selftest
       - name: Run offline tests (resource warnings are errors)
         run: python -W error::ResourceWarning -m unittest discover -s tests -v
