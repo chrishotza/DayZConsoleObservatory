@@ -2,7 +2,7 @@
 
 Herramienta **gratuita, abierta e independiente** para supervisar servidores comunitarios de **DayZ Microsoft Store PC / Xbox** sin modificar el cliente del juego.
 
-> **Versión 0.4.1, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
+> **Versión 0.4.2, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
 
 ## Funciones que ya incluye
 
@@ -19,6 +19,11 @@ Herramienta **gratuita, abierta e independiente** para supervisar servidores com
 Buscamos **3 a 5 dueños de servidores Xbox/Microsoft con Nitrado**. No necesitamos tokens, IDs ni registros privados. Podés probar sin DayZ con `dayz-observe beta-report --db observatory.db`; si sos dueño de un servidor, `dayz-observe nitrado TU_ID --probe` verifica metadatos **sin descargar logs** ni mostrar identificadores.
 
 Seguí la [guía en español](docs/BETA_COMUNITARIA.es.md) y enviá tu [reporte a GitHub](https://github.com/chrishotza/DayZConsoleObservatory/issues/new/choose). La compatibilidad real con Nitrado todavía requiere validación independiente.
+
+
+## Comunidad de GitHub: ayudanos sin tener DayZ
+
+Ejecutá **dayz-observe selftest** para comprobar todo el flujo con un Nitrado simulado, sin cuenta ni juego instalado. Podés colaborar con pruebas en Windows, mejoras de accesibilidad, traducciones o registros ADM sintéticos. Consultá nuestra [guía de colaboración](docs/COMMUNITY_ROADMAP.md) y los [Issues](https://github.com/chrishotza/DayZConsoleObservatory/issues). **Esta simulación todavía no demuestra compatibilidad con Nitrado real.**
 
 ## Comenzar con datos de demostración
 

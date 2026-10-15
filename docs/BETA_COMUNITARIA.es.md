@@ -14,6 +14,7 @@ Instalá Python 3.10 o superior y, desde la carpeta del repositorio:
 
 ```powershell
 python -m pip install -e .
+dayz-observe selftest
 dayz-observe ingest samples/SYNTHETIC_dayz.ADM --db observatory.db
 dayz-observe beta-report --db observatory.db
 dayz-observe dashboard --db observatory.db

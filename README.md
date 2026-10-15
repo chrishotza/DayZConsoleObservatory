@@ -34,6 +34,11 @@ Seeking **3–5 Nitrado community server owners** to field-test our read-only in
 
 Read the [community beta guide](docs/COMMUNITY_BETA.md) and [submit a beta report](https://github.com/chrishotza/DayZConsoleObservatory/issues/new/choose). Our Nitrado connector still needs independent live-server validation.
 
+
+## Join the GitHub community
+
+You can contribute without owning DayZ. Run **dayz-observe selftest** to exercise an entirely offline simulated Nitrado service, then visit the [community roadmap](docs/COMMUNITY_ROADMAP.md) for beginner tasks, quality assurance, translations, synthetic parser fixtures and UI improvements. Open an issue or a pull request with sanitized evidence only. Passing selftest is not proof of compatibility with a real Nitrado server.
+
 ## Quick start (offline demo)
 
 From the project directory:

@@ -15,6 +15,7 @@ Install Python 3.10+, download/clone this repository, open a terminal in the rep
 
 ```bash
 python -m pip install -e .
+dayz-observe selftest
 dayz-observe ingest samples/SYNTHETIC_dayz.ADM --db observatory.db
 dayz-observe beta-report --db observatory.db
 dayz-observe dashboard --db observatory.db

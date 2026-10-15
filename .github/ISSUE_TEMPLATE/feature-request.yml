@@ -1,0 +1,42 @@
+name: Feature or contribution idea
+description: Suggest a verified feature or volunteer to help the project
+title: "[Idea] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Everyone can help, even without DayZ. This tool is currently read-only.
+        Never post credentials, server IDs, unredacted logs or player identifiers.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Contribution area
+      options:
+        - Offline and cross-platform testing
+        - Nitrado compatibility (authorized owner)
+        - Synthetic ADM parser tests
+        - Database reliability
+        - Accessible dashboard
+        - Documentation and translation
+        - Licensed maps
+        - Product discovery
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What administrative problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Proposed approach and sources (optional)
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: My report contains no sensitive credentials or identifiable players/servers.
+          required: true
