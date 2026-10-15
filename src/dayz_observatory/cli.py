@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 from . import __version__
-from .store import ingest
+from .store import ingest, get_quality_report
 from .server import serve
 from .nitrado import NitradoClient, NitradoError
 from .investigate import player_history
@@ -28,6 +28,9 @@ def main(argv=None) -> None:
     q.add_argument("--db", default="observatory.db")
     q.add_argument("--server", default="default")
     q.add_argument("--limit", type=int, default=300)
+    audit = sub.add_parser("audit", help="Inspect evidence quality without DayZ or Nitrado")
+    audit.add_argument("--db", default="observatory.db")
+    audit.add_argument("--server", default="default")
     n = sub.add_parser("nitrado", help="Inspect/download official Xbox service logs (read only)")
     n.add_argument("service_id", type=int)
     n.add_argument("--out", default="private-logs")
@@ -43,6 +46,8 @@ def main(argv=None) -> None:
             serve(args.db,args.server,args.port)
         elif args.cmd == "investigate":
             print(json.dumps(player_history(args.db, args.server, args.player_id, args.limit), indent=2))
+        elif args.cmd == "audit":
+            print(json.dumps(get_quality_report(args.db, args.server), indent=2))
         elif args.cmd == "nitrado":
             api = NitradoClient()
             directory, info = api.discover_log_directory(args.service_id)

@@ -55,3 +55,17 @@ class IngestTests(unittest.TestCase):
         self.assertEqual(len(get_players(self.db,'default')),0)
 
 if __name__=='__main__':unittest.main()
+
+# Import ordering must never masquerade as chronological order.
+class ChronologicalOrderingTests(unittest.TestCase):
+    def test_old_log_imported_later_is_not_first_event(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            db = root / 'db.sqlite'
+            latest = root / 'latest.ADM'
+            earlier = root / 'earlier.ADM'
+            latest.write_text('AdminLog started on 2026-10-15 at 12:00:00\n12:03:00 | latest event\n')
+            earlier.write_text('AdminLog started on 2026-10-14 at 12:00:00\n12:03:00 | earlier event\n')
+            ingest(db, latest)
+            ingest(db, earlier)
+            self.assertEqual(get_events(db)[0]['occurred_at'],'2026-10-15T12:03:00')

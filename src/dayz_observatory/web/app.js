@@ -1,4 +1,4 @@
-const state={players:[],events:[],knownPlayers:[],selectedId:'',history:null};
+const state={players:[],events:[],knownPlayers:[],selectedId:'',history:null,quality:null};
 function paintMap(){
  const canvas=document.getElementById('map'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
  ctx.clearRect(0,0,w,h);ctx.fillStyle='#0d1718';ctx.fillRect(0,0,w,h);
@@ -49,12 +49,16 @@ async function loadHistory(){
  }catch{if(seq!==historySequence)return;document.getElementById('eventCaption').textContent='Player history unavailable';}
 }
 async function refresh(){try{
- const responses=await Promise.all(['/api/players','/api/events?limit=500','/api/known-players'].map(path=>fetch(path)));
+ const responses=await Promise.all(['/api/players','/api/events?limit=500','/api/known-players','/api/quality'].map(path=>fetch(path)));
  if(responses.some(r=>!r.ok))throw Error('Local API request failed');
- [state.players,state.events,state.knownPlayers]=await Promise.all(responses.map(r=>r.json()));
+ [state.players,state.events,state.knownPlayers,state.quality]=await Promise.all(responses.map(r=>r.json()));
+ document.getElementById('qualityPositions').textContent=state.quality.position_observations;
+ document.getElementById('qualityUndated').textContent=state.quality.undated_events;
+ document.getElementById('qualityUnknown').textContent=state.quality.unclassified_events;
+ document.getElementById('qualitySources').textContent=state.quality.imported_sources;
  document.getElementById('playerCount').textContent=state.players.length;
- document.getElementById('eventCount').textContent=state.events.length+' latest';
- const last=state.players[0];document.getElementById('lastSample').textContent=last?.occurred_at?.replace('T',' ')||'Not dated';
+ document.getElementById('eventCount').textContent=state.quality.events+' total';
+ document.getElementById('lastSample').textContent=state.quality.last_observed?.replace('T',' ')||'Not dated';
  document.getElementById('status').textContent='Local API connected • Imported records only';
  updatePlayerOptions();await loadHistory();paintMap();paintEvents();
  }catch{document.getElementById('status').textContent='Unable to read local API';}}

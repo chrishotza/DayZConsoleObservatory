@@ -15,5 +15,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install package
         run: python -m pip install -e .
-      - name: Run offline tests
-        run: python -m unittest discover -s tests -v
+      - name: Verify packaging and syntax
+        run: |
+          python -m compileall -q src tests
+          python -m pip check
+          dayz-observe --version
+      - name: Run offline tests (resource warnings are errors)
+        run: python -W error::ResourceWarning -m unittest discover -s tests -v

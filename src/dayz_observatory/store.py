@@ -1,6 +1,7 @@
 """Atomic, append-aware ADM ingestion and SQLite data access."""
 from __future__ import annotations
 from pathlib import Path
+from contextlib import contextmanager
 import sqlite3
 from .parser import parse_header, parse_line, event_datetime
 from datetime import date
@@ -34,13 +35,18 @@ CREATE INDEX IF NOT EXISTS idx_events_kind ON events(server,kind);
 """
 
 
-def connect(db_path: str | Path) -> sqlite3.Connection:
+@contextmanager
+def connect(db_path: str | Path):
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(str(db_path), timeout=30)
     db.row_factory = sqlite3.Row
-    db.executescript(DDL)
-    return db
+    try:
+        db.executescript(DDL)
+        with db:
+            yield db
+    finally:
+        db.close()
 
 
 def ingest(db_path: str | Path, source: str | Path, server: str="default") -> dict:
@@ -118,7 +124,7 @@ def get_events(db_path: str | Path, server: str="default", kind: str | None=None
         if kind:
             query += " AND kind=?"
             args.append(kind)
-        query += " ORDER BY id DESC LIMIT ?"
+        query += " ORDER BY (occurred_at IS NOT NULL) DESC, occurred_at DESC, id DESC LIMIT ?"
         args.append(limit)
         return [dict(row) for row in db.execute(query,args)]
 
@@ -148,3 +154,44 @@ def get_known_players(db_path: str | Path, server: str = "default") -> list[dict
            ) SELECT player_id,player_name,occurred_at FROM recent
              WHERE rn=1 ORDER BY player_name COLLATE NOCASE,player_id LIMIT 1500""", (server,))
         return [dict(r) for r in rows]
+
+
+def get_quality_report(db_path: str | Path, server: str = "default") -> dict:
+    """Summarize *imported* evidence quality; never imply real-time telemetry.
+
+    Counts are scoped to a single server. Timestamps are server-local with no
+    timezone assumption; "last_observed" is not necessarily the latest arrival.
+    """
+    with connect(db_path) as db:
+        counts = db.execute("""SELECT COUNT(*) AS events,
+            COUNT(DISTINCT player_id) AS known_players,
+            SUM(CASE WHEN occurred_at IS NOT NULL THEN 1 ELSE 0 END) AS dated,
+            SUM(CASE WHEN occurred_at IS NULL THEN 1 ELSE 0 END) AS undated,
+            SUM(CASE WHEN x IS NOT NULL AND z IS NOT NULL THEN 1 ELSE 0 END) AS positioned,
+            SUM(CASE WHEN kind = 'unknown' THEN 1 ELSE 0 END) AS unknown,
+            MIN(occurred_at) AS first_observed, MAX(occurred_at) AS last_observed
+            FROM events WHERE server=?""", (server,)).fetchone()
+        sources = db.execute("""SELECT COUNT(*) AS files,
+            COALESCE(SUM(generation),0) AS replacements
+            FROM sources WHERE server=?""", (server,)).fetchone()
+        by_kind = [dict(r) for r in db.execute("""SELECT kind,COUNT(*) AS count
+            FROM events WHERE server=? GROUP BY kind ORDER BY count DESC,kind ASC""", (server,))]
+        return {
+            "server": server,
+            "events": counts["events"],
+            "known_players": counts["known_players"],
+            "dated_events": counts["dated"] or 0,
+            "undated_events": counts["undated"] or 0,
+            "position_observations": counts["positioned"] or 0,
+            "unclassified_events": counts["unknown"] or 0,
+            "first_observed": counts["first_observed"],
+            "last_observed": counts["last_observed"],
+            "imported_sources": sources["files"],
+            "detected_replacements": sources["replacements"],
+            "event_types": by_kind,
+            "notes": [
+                "All positions are historical ADM observations, not live player locations.",
+                "Timestamps have the game server clock; timezone may be unknown.",
+                "Unknown events are retained; parsing coverage depends on ADM format."
+            ]
+        }

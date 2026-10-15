@@ -4,20 +4,23 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
-from .store import get_events, get_players, get_known_players
+from .store import get_events, get_players, get_known_players, get_quality_report
 from .investigate import player_history
 
 WEB = Path(__file__).parent / "web"
 
 
-def serve(db_path: str, server: str="default", port: int=8765) -> None:
+def make_server(db_path: str, server: str = "default", port: int = 8765) -> ThreadingHTTPServer:
+    """Create loopback-only server. Port 0 is supported for isolated offline tests."""
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             request = urlsplit(self.path)
-            if request.path in ("/api/events", "/api/players", "/api/investigate", "/api/known-players"):
+            if request.path in ("/api/events", "/api/players", "/api/investigate", "/api/known-players", "/api/quality"):
                 query = parse_qs(request.query)
                 try:
-                    if request.path.endswith("/events"):
+                    if request.path.endswith("/quality"):
+                        payload = get_quality_report(db_path, server)
+                    elif request.path.endswith("/events"):
                         limit = int(query.get("limit", ["300"])[0]); kind = query.get("kind", [None])[0]
                         payload = get_events(db_path, server, kind, limit)
                     elif request.path.endswith("/known-players"):
@@ -52,8 +55,12 @@ def serve(db_path: str, server: str="default", port: int=8765) -> None:
         def log_message(self, format, *args):
             return  # no names/IDs in HTTP access logs
 
-    server_http = ThreadingHTTPServer(("127.0.0.1",port),Handler)
-    print(f"DayZ Console Observatory (local only): http://127.0.0.1:{port}")
+    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+
+
+def serve(db_path: str, server: str = "default", port: int = 8765) -> None:
+    server_http = make_server(db_path, server, port)
+    print(f"DayZ Console Observatory (local only): http://127.0.0.1:{server_http.server_port}")
     try:
         server_http.serve_forever()
     except KeyboardInterrupt:
