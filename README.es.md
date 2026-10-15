@@ -2,7 +2,7 @@
 
 Herramienta **gratuita, abierta e independiente** para supervisar servidores comunitarios de **DayZ Microsoft Store PC / Xbox** sin modificar el cliente del juego.
 
-> **Versión 0.1, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
+> **Versión 0.2, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
 
 ## Funciones que ya incluye
 
@@ -10,7 +10,8 @@ Herramienta **gratuita, abierta e independiente** para supervisar servidores com
 - Conservación de registros desconocidos para ampliar el parser.
 - Historial SQLite con detección de duplicados, líneas incompletas y rotaciones básicas.
 - Gráfico X/Z local de las **últimas posiciones registradas**, no posiciones en vivo.
-- Panel para revisar eventos administrativos.
+- Panel para revisar eventos administrativos y seleccionar un jugador para investigar su historial, posiciones y sesiones registradas.
+- Comando `dayz-observe investigate ID_JUGADOR --db observatory.db` para exportar un historial JSON.
 - Conector Nitrado de solo lectura para investigar el acceso a registros en servicios `dayzxb`.
 
 ## Comenzar con datos de demostración
@@ -23,7 +24,7 @@ dayz-observe ingest samples/SYNTHETIC_dayz.ADM --db observatory.db
 dayz-observe dashboard --db observatory.db
 ```
 
-Abrí `http://127.0.0.1:8765` en tu navegador.
+Abrí `http://127.0.0.1:8765` en tu navegador. Seleccioná un jugador en el panel de eventos para consultar su historial. Una sesión sin desconexión registrada **no demuestra** que el jugador esté conectado.
 
 ## Investigar tu servidor Nitrado (opcional)
 

@@ -8,6 +8,7 @@ from . import __version__
 from .store import ingest
 from .server import serve
 from .nitrado import NitradoClient, NitradoError
+from .investigate import player_history
 
 
 def main(argv=None) -> None:
@@ -22,6 +23,11 @@ def main(argv=None) -> None:
     w.add_argument("--db", default="observatory.db")
     w.add_argument("--server", default="default")
     w.add_argument("--port", type=int, default=8765)
+    q = sub.add_parser("investigate", help="Review recorded player timeline and log sessions (read only)")
+    q.add_argument("player_id", help="Full stable identifier from ADM logs")
+    q.add_argument("--db", default="observatory.db")
+    q.add_argument("--server", default="default")
+    q.add_argument("--limit", type=int, default=300)
     n = sub.add_parser("nitrado", help="Inspect/download official Xbox service logs (read only)")
     n.add_argument("service_id", type=int)
     n.add_argument("--out", default="private-logs")
@@ -35,6 +41,8 @@ def main(argv=None) -> None:
             print(json.dumps(ingest(args.db,args.log,args.server),indent=2))
         elif args.cmd == "dashboard":
             serve(args.db,args.server,args.port)
+        elif args.cmd == "investigate":
+            print(json.dumps(player_history(args.db, args.server, args.player_id, args.limit), indent=2))
         elif args.cmd == "nitrado":
             api = NitradoClient()
             directory, info = api.discover_log_directory(args.service_id)
@@ -57,7 +65,7 @@ def main(argv=None) -> None:
                 print(f"Downloaded {name}")
                 if name.lower().endswith(".adm"):
                     print(json.dumps(ingest(args.db,local,server),indent=2))
-    except (OSError,NitradoError,KeyError) as exc:
+    except (OSError,NitradoError,KeyError,ValueError) as exc:
         print(f"Error: {exc}",file=sys.stderr)
         raise SystemExit(1) from None
 

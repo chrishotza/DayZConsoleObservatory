@@ -8,7 +8,7 @@ This project is a **DayZ Microsoft Store PC / Xbox service observability tool**,
 | Invisibility | **Not provided.** A moderator can review records without joining the server, but that is not character invisibility. | Explicit supported game-side admin state control; not identified for this platform. |
 | Teleport active characters | **Not provided.** Changing future spawn configuration does not move a connected player. | An authorized game-side teleport command; not identified for this platform. |
 | Free camera / spectator | **Not provided.** A web timeline/coordinate view is not the in-game free camera. | Official spectator/debug-camera feature accessible to console administrators; not identified. |
-| Incident tracking and last recorded positions | **Offline-supported.** ADM parser, SQLite and local UI tested. | A real, authorized ADM log sample and deployment integration test. |
+| Incident tracking and last recorded positions | **Offline-supported.** ADM parser, SQLite, local UI, player-specific incident timeline and reconstructed log sessions tested. | A real, authorized ADM log sample and deployment integration test. |
 | Nitrado Xbox log access | **Experimental read-only adapter.** Mock-tested, not exercised against a real service. | A willing server owner to try list-only and download against their account. |
 | Ban/whitelist/restart | Not implemented; deliberate safety boundary. | Verify service-specific endpoints/permissions, explicit owner approval, dry-run, auditable actions. |
 

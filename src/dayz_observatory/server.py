@@ -4,7 +4,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
-from .store import get_events, get_players
+from .store import get_events, get_players, get_known_players
+from .investigate import player_history
 
 WEB = Path(__file__).parent / "web"
 
@@ -13,12 +14,18 @@ def serve(db_path: str, server: str="default", port: int=8765) -> None:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             request = urlsplit(self.path)
-            if request.path in ("/api/events", "/api/players"):
+            if request.path in ("/api/events", "/api/players", "/api/investigate", "/api/known-players"):
                 query = parse_qs(request.query)
                 try:
                     if request.path.endswith("/events"):
                         limit = int(query.get("limit", ["300"])[0]); kind = query.get("kind", [None])[0]
                         payload = get_events(db_path, server, kind, limit)
+                    elif request.path.endswith("/known-players"):
+                        payload = get_known_players(db_path, server)
+                    elif request.path.endswith("/investigate"):
+                        player_id = query.get("player_id", [""])[0]
+                        limit = int(query.get("limit", ["300"])[0])
+                        payload = player_history(db_path, server, player_id, limit)
                     else:
                         payload = get_players(db_path, server)
                 except (ValueError, OverflowError):

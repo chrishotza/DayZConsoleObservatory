@@ -135,3 +135,16 @@ def get_players(db_path: str | Path, server: str="default") -> list[dict]:
           FROM ranked WHERE rank=1
           ORDER BY (occurred_at IS NOT NULL) DESC, occurred_at DESC LIMIT 250"""
         return [dict(row) for row in db.execute(query,(server,))]
+
+
+def get_known_players(db_path: str | Path, server: str = "default") -> list[dict]:
+    """Return stable player IDs from all logged events, even without positions."""
+    with connect(db_path) as db:
+        rows = db.execute("""WITH recent AS (
+             SELECT player_id,player_name,occurred_at,
+                    ROW_NUMBER() OVER (PARTITION BY player_id
+                       ORDER BY (occurred_at IS NOT NULL) DESC,occurred_at DESC,id DESC) AS rn
+             FROM events WHERE server=? AND player_id IS NOT NULL
+           ) SELECT player_id,player_name,occurred_at FROM recent
+             WHERE rn=1 ORDER BY player_name COLLATE NOCASE,player_id LIMIT 1500""", (server,))
+        return [dict(r) for r in rows]
