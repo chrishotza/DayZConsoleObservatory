@@ -31,6 +31,26 @@ class RepositoryNavigationTests(unittest.TestCase):
                 self.assertTrue(path.is_relative_to(ROOT.resolve()))
                 self.assertTrue(path.exists(), msg=name)
 
+    def test_machine_index_ci_matrix_matches_workflow(self):
+        """Platform claims in the machine index match GitHub Actions jobs."""
+        index = json.loads((ROOT / "project-index.json").read_text(encoding="utf-8"))
+        workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        expected = set(index["validation"]["github_actions"])
+        actual = set()
+        for job, runner in (("unit-tests", "ubuntu"), ("windows-smoke", "windows"),
+                            ("macos-smoke", "macos")):
+            header = "  " + job + ":\n"
+            self.assertIn(header, workflow)
+            # Split only at another job header, not indented YAML content.
+            section = re.split(r'(?m)^  [A-Za-z0-9_-]+:\s*$', workflow.split(header, 1)[1], maxsplit=1)[0]
+            self.assertIn("runs-on: " + runner + "-latest", section)
+            match = re.search(r'python-version:\s*\[([^\]]+)\]', section)
+            self.assertIsNotNone(match, msg=job)
+            versions = re.findall(r'"(\d+\.\d+)"', match.group(1))
+            self.assertTrue(versions, msg=job)
+            actual.update(runner + " Python " + version for version in versions)
+        self.assertEqual(actual, expected)
+
     def test_ai_entrypoint_is_small_and_has_critical_truth_claims(self):
         agent = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         self.assertLess(len(agent.encode("utf-8")), 8192)
