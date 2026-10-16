@@ -6,11 +6,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 import re
+import math
 
-HEADER = re.compile(r"AdminLog started on\s+(\d{4}-\d{2}-\d{2})\s+at\s+\d{2}:\d{2}:\d{2}", re.I)
+HEADER = re.compile(r"AdminLog started on\s+(?P<date>\d{4}-\d{2}-\d{2})\s+at\s+(?P<time>\d{2}:\d{2}:\d{2})", re.I)
 CLOCK = re.compile(r"^\s*(?P<clock>\d{2}:\d{2}:\d{2})\s*\|\s*(?P<body>.*)$")
 PLAYER = re.compile(r'Player\s+"(?P<name>[^"]+)"\s*\(id=(?P<id>[^\s)]+)', re.I)
 POS = re.compile(r'(?<![a-z])pos\s*=\s*<\s*(?P<x>-?\d+(?:\.\d+)?),\s*(?P<z>-?\d+(?:\.\d+)?),\s*(?P<alt>-?\d+(?:\.\d+)?)\s*>', re.I)
+
+# Keep the deliberately small, synthetic-tested event grammar conservative.
+# Whole words avoid false positives such as "studied" being labeled "died".
+DEATH = re.compile(r"\\b(?:killed by|was killed|died)\\b", re.I)
+HIT = re.compile(r"\\b(?:hit by|damage)\\b|\\bhit\\s*\\(", re.I)
+BUILD = re.compile(r"\\b(?:placed|built|dismantled)\\b", re.I)
 
 
 @dataclass(frozen=True)
@@ -27,7 +34,15 @@ class Event:
 
 def parse_header(line: str) -> date | None:
     m = HEADER.search(line)
-    return date.fromisoformat(m.group(1)) if m else None
+    if m is None:
+        return None
+    try:
+        # Validate the *whole* header timestamp, not only its calendar day.
+        parsed = datetime.strptime(m.group("date") + " " + m.group("time"),
+                                   "%Y-%m-%d %H:%M:%S")
+        return parsed.date()
+    except ValueError:
+        return None
 
 
 def parse_line(line: str) -> Event | None:
@@ -44,26 +59,33 @@ def parse_line(line: str) -> Event | None:
     pm = PLAYER.search(body)
     pos = POS.search(body)
     bodylow = body.lower()
+    coordinates = None
+    if pos:
+        # A syntactically valid but huge numeric token can become +/-inf.
+        # Never persist non-finite coordinates to SQLite / browser JSON.
+        values = tuple(float(pos.group(key)) for key in ("x", "z", "alt"))
+        if all(math.isfinite(value) for value in values):
+            coordinates = values
     if "has been disconnected" in bodylow or "is disconnected" in bodylow:
         kind = "disconnected"
     elif "is connected" in bodylow:
         kind = "connected"
-    elif "killed by" in bodylow or "was killed" in bodylow or "died" in bodylow:
+    elif DEATH.search(body):
         kind = "death"
-    elif "hit by" in bodylow or "hit(" in bodylow or "damage" in bodylow:
+    elif HIT.search(body):
         kind = "hit"
-    elif "placed" in bodylow or "built" in bodylow or "dismantled" in bodylow:
+    elif BUILD.search(body):
         kind = "build"
-    elif pos:
+    elif coordinates is not None:
         kind = "position"
     else:
         kind = "unknown"
     return Event(clock=m.group("clock"), kind=kind,
         player_name=pm.group("name") if pm else None,
         player_id=pm.group("id") if pm else None,
-        x=float(pos.group("x")) if pos else None,
-        z=float(pos.group("z")) if pos else None,
-        altitude=float(pos.group("alt")) if pos else None,
+        x=coordinates[0] if coordinates is not None else None,
+        z=coordinates[1] if coordinates is not None else None,
+        altitude=coordinates[2] if coordinates is not None else None,
         raw=raw)
 
 
