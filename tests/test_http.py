@@ -59,6 +59,29 @@ class HTTPTests(unittest.TestCase):
             self.get('/api/investigate?player_id=')
         self.assertEqual(error.exception.code,400)
 
+    def test_incidents_api_defaults_to_aggregate_only(self):
+        url = ('/api/incidents?start=2026-10-15T12%3A00%3A00'
+               '&end=2026-10-15T12%3A30%3A00')
+        with self.get(url) as response:
+            result = json.load(response)
+        self.assertEqual(result['group_count'], 1)
+        self.assertEqual(result['scanned_records'], 1)
+        self.assertNotIn('ABC', json.dumps(result))
+        self.assertNotIn('Demo', json.dumps(result))
+
+    def test_incidents_api_private_details_are_loopback_only(self):
+        url = ('/api/incidents?start=2026-10-15T12%3A00%3A00'
+               '&end=2026-10-15T12%3A30%3A00&details=1')
+        with self.get(url) as response:
+            result = json.load(response)
+        self.assertEqual(result['groups'][0]['records'][0]['player_id'], 'ABC')
+        self.assertEqual(self.host.server_address[0], '127.0.0.1')
+
+    def test_incidents_api_invalid_window_returns_400(self):
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.get('/api/incidents?start=invalid&end=2026-10-15T12%3A30%3A00')
+        self.assertEqual(error.exception.code, 400)
+
     def test_unrecognized_path_is_rejected(self):
         with self.assertRaises(urllib.error.HTTPError) as error:
             self.get('/api/private-logs')

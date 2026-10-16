@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 from .store import get_events, get_players, get_known_players, get_quality_report
 from .investigate import player_history
+from .incidents import search_incidents
 
 WEB = Path(__file__).parent / "web"
 
@@ -15,11 +16,18 @@ def make_server(db_path: str, server: str = "default", port: int = 8765) -> Thre
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             request = urlsplit(self.path)
-            if request.path in ("/api/events", "/api/players", "/api/investigate", "/api/known-players", "/api/quality"):
+            if request.path in ("/api/events", "/api/players", "/api/investigate", "/api/known-players", "/api/quality", "/api/incidents"):
                 query = parse_qs(request.query)
                 try:
                     if request.path.endswith("/quality"):
                         payload = get_quality_report(db_path, server)
+                    elif request.path.endswith("/incidents"):
+                        payload = search_incidents(db_path, server,
+                            query.get("start", [""])[0], query.get("end", [""])[0],
+                            gap_seconds=int(query.get("gap_seconds", ["300"])[0]),
+                            max_records=int(query.get("max_records", ["500"])[0]),
+                            player_id=query.get("player_id", [None])[0],
+                            private=query.get("details", ["0"])[0] == "1")
                     elif request.path.endswith("/events"):
                         limit = int(query.get("limit", ["300"])[0]); kind = query.get("kind", [None])[0]
                         payload = get_events(db_path, server, kind, limit)

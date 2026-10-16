@@ -4,7 +4,7 @@
 
 Not a cheat or an in-game admin mod. Designed for the Microsoft/Xbox version where Steam Workshop mods are unavailable.
 
-> Status: **v0.4.1 / early development / read-only**. Offline tests pass; the Nitrado connector **has not been validated with a real owner's token or live DayZ Xbox service**. Do not deploy for production moderation without verification.
+> Status: **v0.6.0 / early development / read-only**. Offline tests pass; the Nitrado connector **has not been validated with a real owner's token or live DayZ Xbox service**. Do not deploy for production moderation without verification.
 
 ## What works today
 
@@ -56,6 +56,18 @@ Watch defaults to **one sync attempt every 300 seconds** (minimum 60), stops aft
 ## Case exports and privacy (v0.5.1)
 
 Use `dayz-observe case PLAYER_ID --db observatory.db --out case-summary.json` to create a **privacy-preserving aggregate report** by default. To include private raw evidence for your own review, explicitly add `--private` and use a separate, non-public filename. Existing files are never overwritten, and private identifiers are not printed to the terminal. See [case evidence guide](docs/CASE_EVIDENCE.md). Same-inode ADM rewrites are now detected using consumed-range SHA-256 checks.
+
+## Temporal incident investigation (v0.6.0)
+
+The new **Incident timeline** in the local dashboard groups imported ADM events by proximity in the **server's local clock**, including context from other players within the same temporal window. It does not claim causal interaction or infer live coordinates.
+
+For a share-safe aggregate JSON report, run:
+
+~~~powershell
+dayz-observe incidents 2026-10-15T12:00:00 2026-10-15T12:30:00 --db observatory.db --out summary.json
+~~~
+
+Optional `--player-id ID` limits results to time windows containing that player while retaining nearby events from other players. Add `--private` **only for confidential, local review** to include timestamps, identities, coordinates, raw lines and record fingerprints. Import limits are explicit (`truncated=true`), undated events are excluded, and a 48-hour upper bound prevents unbounded queries. See [incident investigation guide](docs/INCIDENT_INVESTIGATION.md).
 
 ## Quick start (offline demo)
 

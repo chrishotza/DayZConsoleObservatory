@@ -2,7 +2,7 @@
 
 Herramienta **gratuita, abierta e independiente** para supervisar servidores comunitarios de **DayZ Microsoft Store PC / Xbox** sin modificar el cliente del juego.
 
-> **Versión 0.5.1, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
+> **Versión 0.6.0, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
 
 ## Funciones que ya incluye
 
@@ -42,6 +42,16 @@ El programa consulta como máximo una vez cada 300 segundos de forma predetermin
 ## Exportación de casos y privacidad (v0.5.1)
 
 El comando `dayz-observe case ID_JUGADOR --db observatory.db --out resumen.json` crea un **informe agregado sin identidades** de forma predeterminada. Para incluir registros privados completos en un archivo local, agregá explícitamente `--private` y no lo compartas públicamente. Nunca sobrescribe archivos existentes. Ver [guía de evidencia](docs/CASE_EVIDENCE.md). Se detectan además reescrituras ADM in situ mediante SHA-256.
+
+## Investigador de incidentes por horario (v0.6.0)
+
+El panel local ahora muestra **Incident timeline** para agrupar eventos ADM cercanos en el tiempo. El intervalo se interpreta según el reloj del servidor y no implica que los jugadores hayan interactuado.
+
+~~~powershell
+dayz-observe incidents 2026-10-15T12:00:00 2026-10-15T12:30:00 --db observatory.db --out resumen.json
+~~~
+
+El archivo predeterminado contiene solamente conteos sin identidades. `--player-id ID` busca intervalos donde aparece ese jugador, incluyendo el contexto de otros jugadores. Usá `--private` únicamente para revisar información identificable localmente. La búsqueda marca resultados truncados y excluye eventos sin fecha. Consultá [la guía de incidentes](docs/INCIDENT_INVESTIGATION.md).
 
 ## Comenzar con datos de demostración
 

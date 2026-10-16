@@ -65,3 +65,32 @@ async function refresh(){try{
 document.getElementById('kind').addEventListener('change',paintEvents);
 document.getElementById('playerFilter').addEventListener('change',e=>{state.selectedId=e.target.value;loadHistory();});
 refresh();setInterval(refresh,20000);
+
+async function searchIncidentTimeline(){
+ const root=document.getElementById('incidentOutput');
+ const start=document.getElementById('incidentStart').value;
+ const end=document.getElementById('incidentEnd').value;
+ const isSecondPrecision=s=>/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?$/.test(s);
+ if(!isSecondPrecision(start)||!isSecondPrecision(end)){root.textContent='Choose a valid start and end time from the server clock.';return;}
+ const normalize=s=>s.length===16?s+':00':s;
+ root.textContent='Searching imported records…';
+ const params=new URLSearchParams({start:normalize(start),end:normalize(end),details:'1',max_records:'500'});
+ if(state.selectedId)params.set('player_id',state.selectedId);
+ try{
+  const response=await fetch('/api/incidents?'+params.toString());
+  if(!response.ok)throw Error('Invalid time window or search unavailable');
+  const data=await response.json();
+  root.replaceChildren();
+  const summary=document.createElement('p');
+  summary.textContent=data.group_count+' review windows • '+data.selected_records+' imported records'+(data.truncated?' • TRUNCATED (refine interval)':'');
+  root.append(summary);
+  for(const group of data.groups){
+   const card=document.createElement('div');card.className='incident-item';
+   const title=document.createElement('strong');title.textContent='Window '+group.index+': '+group.first_observed.replace('T',' ')+' to '+group.last_observed.replace('T',' ');
+   const details=document.createElement('p');details.textContent=group.record_count+' records • '+group.known_players+' linked players • '+Object.entries(group.kind_counts).map(([kind,n])=>kind+' '+n).join(', ');
+   card.append(title,details);root.append(card);
+  }
+  if(!data.groups.length){const empty=document.createElement('p');empty.textContent='No matching incident windows in imported, dated logs.';root.append(empty);}
+ }catch{root.textContent='Unable to search. Check that the interval is valid (48 hours maximum).';}
+}
+document.getElementById('incidentSearch').addEventListener('click',searchIncidentTimeline);

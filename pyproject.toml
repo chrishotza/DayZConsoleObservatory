@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dayz-console-observatory"
-version = "0.5.1"
+version = "0.6.0"
 description = "Read-only observability and incident review for DayZ Microsoft/Xbox community servers"
 readme = "README.md"
 requires-python = ">=3.10"

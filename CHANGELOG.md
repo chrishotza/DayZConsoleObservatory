@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-10-15
+
+- Added bounded, server-local temporal incident grouping from dated ADM evidence.
+- Added optional player-anchored context, chronological clusters, provenance-backed private exports and aggregate-only default sharing.
+- Added local timeline UI and a loopback-only HTTP incident endpoint, strict time validation and regression tests.
+- No live Nitrado validation, in-game observer/teleport capability, or publisher approval is implied.
+
+
 ## 0.5.1 — 2026-10-15
 
 - Added aggregate-only case summaries and explicit private incident exports with per-record fingerprints.

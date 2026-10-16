@@ -14,6 +14,7 @@ from .beta import probe_nitrado, offline_beta_report
 from .selftest import run_selftest, SelfTestError
 from .watch import watch_foreground
 from .casebook import build_case, save_case
+from .incidents import search_incidents
 
 
 def main(argv=None) -> None:
@@ -40,6 +41,16 @@ def main(argv=None) -> None:
     case.add_argument("--out", required=True, help="Destination JSON, must not already exist")
     case.add_argument("--limit", type=int, default=500)
     case.add_argument("--private", action="store_true", help="Explicitly include raw player IDs, names, coordinates and evidence lines")
+    incidents = sub.add_parser("incidents", help="Group temporally adjacent ADM events into review windows")
+    incidents.add_argument("start", help="Server-local YYYY-MM-DDTHH:MM:SS")
+    incidents.add_argument("end", help="Server-local YYYY-MM-DDTHH:MM:SS, within 48 hours")
+    incidents.add_argument("--db", default="observatory.db")
+    incidents.add_argument("--server", default="default")
+    incidents.add_argument("--out", required=True, help="Write a new JSON file (no overwrites)")
+    incidents.add_argument("--gap-seconds", type=int, default=300)
+    incidents.add_argument("--max-records", type=int, default=500)
+    incidents.add_argument("--player-id", help="Optional player to anchor related time windows")
+    incidents.add_argument("--private", action="store_true", help="Include identities, times, provenance and raw records")
     audit = sub.add_parser("audit", help="Inspect evidence quality without DayZ or Nitrado")
     audit.add_argument("--db", default="observatory.db")
     audit.add_argument("--server", default="default")
@@ -82,6 +93,14 @@ def main(argv=None) -> None:
             print(json.dumps({"saved": True, "disclosure": result["disclosure"],
                               "events": result["event_count"],
                               "truncated": result["truncated"]}, sort_keys=True))
+        elif args.cmd == "incidents":
+            result = search_incidents(args.db, args.server, args.start, args.end,
+                                      gap_seconds=args.gap_seconds, max_records=args.max_records,
+                                      player_id=args.player_id, private=args.private)
+            save_case(args.out, result)
+            print(json.dumps({"saved": True, "disclosure": result["disclosure"],
+                              "groups": result["group_count"], "truncated": result["truncated"]},
+                             sort_keys=True))
         elif args.cmd == "audit":
             print(json.dumps(get_quality_report(args.db, args.server), indent=2))
         elif args.cmd == "beta-report":
