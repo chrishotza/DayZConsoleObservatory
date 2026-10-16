@@ -37,6 +37,21 @@ CREATE INDEX IF NOT EXISTS idx_events_kind ON events(server,kind);
 """
 
 
+
+def _sqlite_file_id(value: int) -> int:
+    """Stable 63-bit representation of platform file IDs for SQLite INTEGER.
+
+    Windows may expose inode/device identifiers above signed 64-bit range.
+    Preserve native values that already fit; hash only out-of-range IDs.
+    This value is for local rotation detection, never a player identifier.
+    """
+    native = int(value)
+    if -(1 << 63) <= native < (1 << 63):
+        return native
+    digest = hashlib.blake2b(str(native).encode("ascii"), digest_size=8).digest()
+    return (int.from_bytes(digest, "big") & ((1 << 63) - 1)) or 1
+
+
 @contextmanager
 def connect(db_path: str | Path):
     db_path = Path(db_path)
@@ -63,6 +78,8 @@ def ingest(db_path: str | Path, source: str | Path, server: str="default") -> di
     file = Path(source).expanduser().resolve()
     with file.open("rb") as fh:
         stat = file.stat()
+        file_inode = _sqlite_file_id(stat.st_ino)
+        file_device = _sqlite_file_id(stat.st_dev)
         current_prefix = fh.read(128)
         with connect(db_path) as db:
             row = db.execute("SELECT * FROM sources WHERE server=? AND path=?", (server, str(file))).fetchone()
@@ -74,8 +91,8 @@ def ingest(db_path: str | Path, source: str | Path, server: str="default") -> di
             # Compare the prefix to the original prefix length (growth isn't a rewrite).
             prev_prefix = bytes(row["prefix"]) if row else b""
             identity_changed = bool(row and (
-                (stat.st_ino != row["inode"] and row["inode"] != 0) or
-                (stat.st_dev != row["device"] and row["device"] != 0)
+                (file_inode != row["inode"] and row["inode"] != 0) or
+                (file_device != row["device"] and row["device"] != 0)
             ))
             prefix_changed = bool(row and current_prefix[:len(prev_prefix)] != prev_prefix)
             # Do not trust inode, size, or a short prefix. A provider may
@@ -145,7 +162,7 @@ def ingest(db_path: str | Path, source: str | Path, server: str="default") -> di
                 generation=excluded.generation,offset=excluded.offset,device=excluded.device,
                 inode=excluded.inode,prefix=excluded.prefix,content_hash=excluded.content_hash,
                 base_date=excluded.base_date,last_second=excluded.last_second,rollover=excluded.rollover""",
-                (server,str(file),generation,next_offset,stat.st_dev,stat.st_ino,prefix,digest.hexdigest(),
+                (server,str(file),generation,next_offset,file_device,file_inode,prefix,digest.hexdigest(),
                  base_date.isoformat() if base_date else None,last_second,rollover))
             return {"source":str(file),"server":server,"read_events":parsed,"new_events":stored,
                     "offset":next_offset,"generation":generation,"rotated":rotated}
