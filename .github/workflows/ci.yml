@@ -28,3 +28,25 @@ jobs:
           dayz-observe selftest
       - name: Run offline tests (resource warnings are errors)
         run: python -W error::ResourceWarning -m unittest discover -s tests -v
+
+  windows-smoke:
+    name: Windows / Python 3.12 / full offline suite
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install editable package on Windows
+        run: python -m pip install -e .
+      - name: Run offline synthetic Nitrado end-to-end
+        run: |
+          dayz-observe --version
+          dayz-observe selftest
+      - name: Run complete unit suite on Windows
+        run: python -W error::ResourceWarning -m unittest discover -s tests -v
