@@ -36,7 +36,8 @@ The **Nitrado connector** is an optional advanced command-line tool, not yet val
 - Browser does not open: copy the URL shown in the launcher window into your browser.
 - Startup fails: check Python version and whether the full folder (including `src/`) was extracted.
 - Import reports zero new events: the file may have been imported already, lack complete lines, or contain unsupported ADM grammar.
-- No timestamps: DayZ ADM headers may be missing or the log date may not be available; no UTC is assumed.
+- No timestamps: DayZ ADM headers may be missing, have an impossible calendar day or invalid header time. The parser does not invent a date or assume UTC.
+- Unknown events: the parser deliberately avoids guessing event types from substrings inside unrelated words. Extremely large coordinates that become non-finite are retained as unclassified text rather than placed on the map.
 - For developer checks: `python launcher.py --check` and `python -m unittest discover -s tests -v`.
 
 **Status:** CI tests Linux, Windows, and macOS offline (including Python 3.14). Automated platform smoke tests do not replace independent hardware validation or real DayZ/Nitrado service validation.
