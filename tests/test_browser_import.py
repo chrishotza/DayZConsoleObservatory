@@ -90,10 +90,23 @@ class BrowserImportTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self.post("/api/import?name=x.ADM", b"x", content_type="text/plain")
         self.assertEqual(ctx.exception.code, 415)
-        with self.assertRaises(urllib.error.HTTPError) as ctx:
-            self.post("/api/import?name=x.ADM", b"x"*(MAX_ADM_BYTES + 1),
-                      content_type="application/octet-stream")
-        self.assertEqual(ctx.exception.code, 413)
+        # Send only headers claiming an oversized body. The server must return
+        # HTTP 413 before reading bytes. Sending 8+ MiB then receiving an early
+        # rejection causes BrokenPipe/WinError 10053 on some operating systems.
+        import http.client
+        conn = http.client.HTTPConnection("127.0.0.1", self.http.server_port, timeout=3)
+        try:
+            conn.putrequest("POST", "/api/import?name=x.ADM")
+            conn.putheader("Origin", self.url)
+            conn.putheader("X-DayZ-Local-UI", "v1")
+            conn.putheader("Content-Type", "application/octet-stream")
+            conn.putheader("Content-Length", str(MAX_ADM_BYTES + 1))
+            conn.endheaders()
+            response = conn.getresponse()
+            self.assertEqual(response.status, 413)
+            response.read()
+        finally:
+            conn.close()
 
     def test_import_does_not_expose_raw_log_in_response(self):
         content = ('AdminLog started on 2026-10-15 at 12:00:00\n'
