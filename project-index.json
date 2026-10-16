@@ -17,7 +17,8 @@
     "historical_positions": "sparse X/Z snapshots",
     "incident_review": "offline-tested",
     "nitrado_live": "UNVERIFIED",
-    "esp_teleport_invisibility": "NOT IMPLEMENTED"
+    "esp_teleport_invisibility": "NOT IMPLEMENTED",
+    "accessible_positions": "Historical X/Z positions also available in a keyboard-accessible text table."
   },
   "modules": {
     "frontend": [
@@ -64,7 +65,11 @@
       "ubuntu Python 3.10",
       "ubuntu Python 3.12",
       "ubuntu Python 3.13",
-      "windows Python 3.12"
+      "ubuntu Python 3.14",
+      "windows Python 3.12",
+      "windows Python 3.14",
+      "macos Python 3.12",
+      "macos Python 3.14"
     ]
   },
   "data_policy": "No public tokens, raw player logs, coordinates, IDs or SQLite database files; localhost not authenticated for network exposure."
