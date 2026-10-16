@@ -41,8 +41,28 @@ class RepositoryNavigationTests(unittest.TestCase):
                             ("macos-smoke", "macos")):
             header = "  " + job + ":\n"
             self.assertIn(header, workflow, msg=job)
-            # Job headers are two-space indented; nested lines use >=4 spaces.
-            section = workflow.split(header, 1)[1].split("\n  ", 1)[0]
+            # Only split at another two-space job header, not at its indented YAML contents.
+            section = re.split(r'(?m)^  [A-Za-z0-9_-]+:\s*
+            self.assertIn("runs-on: " + runner + "-latest", section)
+            matrix = re.search(r'python-version:\s*\[([^\]]+)\]', section)
+            self.assertIsNotNone(matrix, msg=job)
+            versions = re.findall(r'"(\d+\.\d+)"', matrix.group(1))
+            self.assertTrue(versions, msg=job)
+            actual.update(runner + " Python " + version for version in versions)
+        self.assertEqual(actual, expected)
+
+    def test_ai_entrypoint_is_small_and_has_critical_truth_claims(self):
+        agent = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertLess(len(agent.encode("utf-8")), 8192)
+        for phrase in ("Nitrado", "UNVERIFIED", "loopback", "synthetic", "Windows"):
+            self.assertIn(phrase.lower(), agent.lower())
+        for name in ("README.md", "README.es.md", "docs/INDEX.md",
+                     "docs/GUI_GUIDE.md", "START_HERE.cmd", "launcher.py"):
+            self.assertTrue((ROOT / name).exists())
+
+if __name__ == "__main__":
+    unittest.main()
+, workflow.split(header, 1)[1], maxsplit=1)[0]
             self.assertIn("runs-on: " + runner + "-latest", section)
             matrix = re.search(r'python-version:\s*\[([^\]]+)\]', section)
             self.assertIsNotNone(matrix, msg=job)
