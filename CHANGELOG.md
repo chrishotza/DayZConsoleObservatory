@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Browser import now reports a count of unfinished trailing-line bytes, without exposing log text. Pending lines remain uncommitted until reimported after completion.
 - Hardened synthetic-tested ADM parser: reject invalid header dates/times and non-finite coordinates without fabricating observations.
 - Avoid false death/combat/building matches from keywords embedded within other words, while preserving unknown timestamped records.
 - Added parser and SQLite ingestion regression tests; real-world ADM coverage still requires consent-based validation.
