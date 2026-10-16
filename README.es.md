@@ -2,7 +2,7 @@
 
 Herramienta **gratuita, abierta e independiente** para supervisar servidores comunitarios de **DayZ Microsoft Store PC / Xbox** sin modificar el cliente del juego.
 
-> **Versión 0.6.0, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
+> **Versión 0.7.0, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
 
 ## Funciones que ya incluye
 
@@ -52,6 +52,18 @@ dayz-observe incidents 2026-10-15T12:00:00 2026-10-15T12:30:00 --db observatory.
 ~~~
 
 El archivo predeterminado contiene solamente conteos sin identidades. `--player-id ID` busca intervalos donde aparece ese jugador, incluyendo el contexto de otros jugadores. Usá `--private` únicamente para revisar información identificable localmente. La búsqueda marca resultados truncados y excluye eventos sin fecha. Consultá [la guía de incidentes](docs/INCIDENT_INVESTIGATION.md).
+
+## Integridad, respaldos y retención local (v0.7.0)
+
+Ahora podés examinar SQLite sin divulgar datos de jugadores, crear respaldos consistentes y simular la eliminación de registros antiguos:
+
+~~~powershell
+dayz-observe doctor --db observatory.db
+dayz-observe backup --db observatory.db --out respaldo-privado.sqlite
+dayz-observe retain --db observatory.db --server MI_SERVIDOR --before 2026-10-01T00:00:00
+~~~
+
+`retain` **solo simula por defecto**. Para ejecutar la eliminación lógica en la base local se requiere `--apply --confirm-server MI_SERVIDOR`. No modifica Nitrado ni elimina originales ADM, respaldos ni necesariamente rastros en WAL/espacio libre SQLite. Los archivos de respaldo pueden contener datos privados. Ver [operaciones locales seguras](docs/LOCAL_DATA_OPERATIONS.md).
 
 ## Comenzar con datos de demostración
 

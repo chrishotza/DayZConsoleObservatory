@@ -15,6 +15,7 @@ from .selftest import run_selftest, SelfTestError
 from .watch import watch_foreground
 from .casebook import build_case, save_case
 from .incidents import search_incidents
+from .maintenance import database_health, backup_database, retain_recent
 
 
 def main(argv=None) -> None:
@@ -51,6 +52,17 @@ def main(argv=None) -> None:
     incidents.add_argument("--max-records", type=int, default=500)
     incidents.add_argument("--player-id", help="Optional player to anchor related time windows")
     incidents.add_argument("--private", action="store_true", help="Include identities, times, provenance and raw records")
+    doctor = sub.add_parser("doctor", help="Read-only SQLite health and aggregate counts")
+    doctor.add_argument("--db", default="observatory.db")
+    backup = sub.add_parser("backup", help="Consistent owner-private SQLite backup (no overwrite)")
+    backup.add_argument("--db", default="observatory.db")
+    backup.add_argument("--out", required=True, help="New backup filename, must not exist")
+    retain = sub.add_parser("retain", help="Preview retention cutoff, requiring explicit confirmation to apply")
+    retain.add_argument("--db", default="observatory.db")
+    retain.add_argument("--server", default="default")
+    retain.add_argument("--before", required=True, help="Exclusive server-local YYYY-MM-DDTHH:MM:SS cutoff")
+    retain.add_argument("--apply", action="store_true", help="Logically delete selected dated events")
+    retain.add_argument("--confirm-server", help="Must exactly match --server when applying")
     audit = sub.add_parser("audit", help="Inspect evidence quality without DayZ or Nitrado")
     audit.add_argument("--db", default="observatory.db")
     audit.add_argument("--server", default="default")
@@ -101,6 +113,17 @@ def main(argv=None) -> None:
             print(json.dumps({"saved": True, "disclosure": result["disclosure"],
                               "groups": result["group_count"], "truncated": result["truncated"]},
                              sort_keys=True))
+        elif args.cmd == "doctor":
+            result = database_health(args.db)
+            print(json.dumps(result, sort_keys=True))
+            if not result["integrity_ok"]:
+                raise SystemExit(2)
+        elif args.cmd == "backup":
+            print(json.dumps(backup_database(args.db, args.out), sort_keys=True))
+        elif args.cmd == "retain":
+            result = retain_recent(args.db, args.server, args.before,
+                                   apply=args.apply, confirm_server=args.confirm_server)
+            print(json.dumps(result, sort_keys=True))
         elif args.cmd == "audit":
             print(json.dumps(get_quality_report(args.db, args.server), indent=2))
         elif args.cmd == "beta-report":

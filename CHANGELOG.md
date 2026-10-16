@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 — 2026-10-15
+
+- Added read-only SQLite health checks with aggregate-only diagnostics.
+- Added consistent, integrity-verified online SQLite backup; exclusive file creation and restricted file permissions.
+- Added per-server retention with dry-run default, explicit cutoff and exact server confirmation before applying.
+- Preserved undated evidence and ingestion cursors, with honest warnings about WAL, SQLite freelist, original ADM files and backups.
+- Added offline failure, privacy, backup and retention tests; no Nitrado credentials or DayZ required.
+- All operations affect the local database only; Xbox/Nitrado production compatibility remains unverified.
+
+
 ## 0.6.0 — 2026-10-15
 
 - Added bounded, server-local temporal incident grouping from dated ADM evidence.

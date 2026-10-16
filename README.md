@@ -4,7 +4,7 @@
 
 Not a cheat or an in-game admin mod. Designed for the Microsoft/Xbox version where Steam Workshop mods are unavailable.
 
-> Status: **v0.6.0 / early development / read-only**. Offline tests pass; the Nitrado connector **has not been validated with a real owner's token or live DayZ Xbox service**. Do not deploy for production moderation without verification.
+> Status: **v0.7.0 / early development / read-only**. Offline tests pass; the Nitrado connector **has not been validated with a real owner's token or live DayZ Xbox service**. Do not deploy for production moderation without verification.
 
 ## What works today
 
@@ -68,6 +68,18 @@ dayz-observe incidents 2026-10-15T12:00:00 2026-10-15T12:30:00 --db observatory.
 ~~~
 
 Optional `--player-id ID` limits results to time windows containing that player while retaining nearby events from other players. Add `--private` **only for confidential, local review** to include timestamps, identities, coordinates, raw lines and record fingerprints. Import limits are explicit (`truncated=true`), undated events are excluded, and a 48-hour upper bound prevents unbounded queries. See [incident investigation guide](docs/INCIDENT_INVESTIGATION.md).
+
+## Local database safety and retention (v0.7.0)
+
+Three local-only commands help owners safely manage growing SQLite evidence without any DayZ or Nitrado access:
+
+~~~powershell
+dayz-observe doctor --db observatory.db
+dayz-observe backup --db observatory.db --out private-backup.sqlite
+dayz-observe retain --db observatory.db --server YOUR_SERVER --before 2026-10-01T00:00:00
+~~~
+
+The retention command **only previews by default**. To actually delete older *dated* events in that one local database, explicitly add `--apply --confirm-server YOUR_SERVER`. Undated observations and sync cursors remain intact. Backups are created exclusively with private file permissions and cannot overwrite files. **Neither retention nor backup alters the Nitrado server.** Retention is *logical* deletion: original ADM files, backups, SQLite freelist and WAL may still hold previous records; it does not guarantee secure erasure. See [local data operations](docs/LOCAL_DATA_OPERATIONS.md).
 
 ## Quick start (offline demo)
 

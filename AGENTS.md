@@ -56,3 +56,11 @@ Claude, Gemini and Grok may contribute independently with explicitly shared evid
 - Update English/Spanish docs and `CHANGELOG.md` for visible features.
 - Verify the HEAD commit and completed CI run after GitHub writes.
 - No unsolicited community or company outreach while the project owner has deferred it.
+
+## v0.7 local data operations
+
+- `maintenance.py`: `doctor` uses read-only SQLite URI and never creates a missing DB.
+- `backup` uses SQLite online backup to a new owner-private filename and verifies `PRAGMA quick_check`; never overwrite or print player data.
+- `retain` previews by default. Applying requires `--apply --confirm-server` exactly matching `--server`, and an explicit exclusive server-local timestamp cutoff. Unknown timestamps and sync source offsets remain untouched.
+- Logical deletion does not securely erase WAL/free pages, private ADM files or backups. Warn users; never market this as guaranteed erasure.
+- Never export database backups to public GitHub issues or include identifiers in doctor/retention JSON.
