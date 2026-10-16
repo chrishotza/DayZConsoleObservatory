@@ -20,7 +20,7 @@ On macOS/Linux, from the repository folder, use `python3 launcher.py`.
 
 - **My ADM records / Demo:** two separate server namespaces within SQLite. Clicking Demo imports synthetic events into the demo namespace only. **Demo cannot pollute your actual records.**
 - **Import:** accepts non-empty `.ADM` files up to 8 MiB, locally. Reimport the same file after it grows; byte-offset ingestion avoids duplicate records. Large logs may instead be imported with the advanced CLI.
-- **Positions:** schematic X/Z coordinates from recorded snapshots, not a live map.
+- **Positions:** schematic X/Z coordinates from recorded snapshots, not a live map. Under the plot, expand **Read recorded positions as text** for a keyboard/screen-reader-friendly table of player names, X/Z coordinates and server-local observation times. The table is historical, not a live online-player list; it stays within the selected local/demo workspace.
 - **Events:** pick a player or event kind to focus on observations.
 - **Incident timeline:** choose a server-local range of at most 48 hours. Temporal adjacency is **not proof of player interaction**.
 - **Auto refresh:** the interface refreshes local data; it does not poll Nitrado itself.
