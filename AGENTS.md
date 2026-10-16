@@ -4,7 +4,7 @@
 
 ## Context in 4 sentences
 
-This is a **local-first, browser-based** admin-log observability tool for DayZ Microsoft/Xbox. It parses historical ADM events into SQLite, shows a local timeline/map, and exports evidence; a real Xbox Nitrado service is **not yet validated**. There is **no** authorized in-game ESP, teleport, invisibility or freecam. Synthetic test fixtures are not live data.
+This is a **local-first, browser-based** admin-log observability tool for DayZ Microsoft/Xbox. It parses historical ADM events into SQLite, shows a local timeline/map, and exports evidence; a real Xbox Nitrado service is **not yet validated**. There is **no** authorized in-game ESP, teleport, invisibility or freecam. Live Nitrado behavior is **UNVERIFIED**. Synthetic test fixtures are not live data; the browser is **loopback-only**.
 
 ## Fast task router
 
