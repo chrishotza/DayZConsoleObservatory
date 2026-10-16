@@ -10,7 +10,7 @@ This is a **local-first, browser-based** admin-log observability tool for DayZ M
 
 | Intent | First file(s) | Tests |
 | --- | --- | --- |
-| Browser workflows, demo, ADM upload | `server.py`, `web/app.js`, `web/index.html` | `test_browser_import.py`, `test_http.py`, `test_ui_contract.py` |
+| Browser workflows, demo, ADM upload, accessibility | `server.py`, `web/app.js`, `web/index.html`, `web/style.css` | `test_browser_import.py`, `test_http.py`, `test_ui_contract.py`, `test_accessible_positions.py` |
 | Windows double-click launch | `launcher.py`, `START_HERE.cmd` | `test_launcher.py`, Windows GitHub Actions |
 | Parse event grammar | `parser.py` | `test_parser.py` |
 | SQLite append, rotation, quality | `store.py` | `test_store.py`, `test_windows_file_identity.py` |

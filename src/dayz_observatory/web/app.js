@@ -2,10 +2,28 @@ const state={players:[],events:[],knownPlayers:[],selectedId:'',history:null,qua
 const $=id=>document.getElementById(id);
 function scopedUrl(path){const url=new URL(path,location.origin);url.searchParams.set('scope',state.scope);return url.pathname+url.search;}
 function setFeedback(message){$('workspaceFeedback').textContent=message;}
+function paintPositionTable(pts){
+ const root=$('positionRows');root.replaceChildren();
+ $('positionTableSummary').textContent='Read recorded positions as text ('+pts.length+')';
+ if(!pts.length){
+  const row=document.createElement('tr'),cell=document.createElement('td');
+  cell.colSpan=4;cell.textContent='No recorded positions in this workspace.';
+  row.append(cell);root.append(row);return;
+ }
+ for(const p of pts){
+  const row=document.createElement('tr');
+  if(state.selectedId===p.player_id)row.className='selected-row';
+  const values=[p.player_name||'Unknown',String(p.x),String(p.z),
+                (p.occurred_at||'Time unavailable').replace('T',' ')];
+  for(const value of values){const cell=document.createElement('td');cell.textContent=value;row.append(cell);}
+  root.append(row);
+ }
+}
 function paintMap(){
  const canvas=$('map'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
  ctx.clearRect(0,0,w,h);ctx.fillStyle='#0d1718';ctx.fillRect(0,0,w,h);
  const pts=state.players.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.z));
+ paintPositionTable(pts);
  const xs=pts.map(p=>p.x),zs=pts.map(p=>p.z);
  const loX=Math.min(0,...xs),hiX=Math.max(15360,...xs),loZ=Math.min(0,...zs),hiZ=Math.max(15360,...zs);
  const mx=72,my=54,iw=w-2*mx,ih=h-2*my,X=n=>mx+iw*(n-loX)/(hiX-loX||1),Y=n=>h-my-ih*(n-loZ)/(hiZ-loZ||1);
