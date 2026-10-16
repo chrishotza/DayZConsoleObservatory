@@ -131,14 +131,14 @@ class InplaceRewriteRegressionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             db, log = root / "db.sqlite", root / "active.ADM"
-            beginning = (b"AdminLog started on 2026-10-15 at 12:00:00\\n"
-                         + b"12:00:00 | " + b"A"*160 + b"\\n")
-            log.write_bytes(beginning + b"12:01:00 | before\\n")
+            beginning = (b"AdminLog started on 2026-10-15 at 12:00:00\n"
+                         + b"12:00:00 | " + b"A"*160 + b"\n")
+            log.write_bytes(beginning + b"12:01:00 | before\n")
             first = ingest(db, log)
             inode = log.stat().st_ino
             with log.open("r+b") as file:
                 file.seek(0)
-                file.write(beginning + b"12:01:00 | after!\\n")
+                file.write(beginning + b"12:01:00 | after!\n")
                 file.truncate()
             self.assertEqual(log.stat().st_ino, inode)
             later = ingest(db, log)
@@ -150,13 +150,13 @@ class InplaceRewriteRegressionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             db, log = root / "db.sqlite", root / "active.ADM"
-            beginning = (b"AdminLog started on 2026-10-15 at 12:00:00\\n"
-                         + b"12:00:00 | " + b"A"*160 + b"\\n")
-            log.write_bytes(beginning + b"12:01:00 | before\\n")
+            beginning = (b"AdminLog started on 2026-10-15 at 12:00:00\n"
+                         + b"12:00:00 | " + b"A"*160 + b"\n")
+            log.write_bytes(beginning + b"12:01:00 | before\n")
             first = ingest(db, log)
             with log.open("r+b") as file:
                 file.seek(0)
-                file.write(beginning + b"12:01:00 | after!\\n12:02:00 | new\\n")
+                file.write(beginning + b"12:01:00 | after!\n12:02:00 | new\n")
                 file.truncate()
             later = ingest(db, log)
             self.assertTrue(later["rotated"])
