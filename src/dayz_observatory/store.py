@@ -165,7 +165,9 @@ def ingest(db_path: str | Path, source: str | Path, server: str="default") -> di
                 (server,str(file),generation,next_offset,file_device,file_inode,prefix,digest.hexdigest(),
                  base_date.isoformat() if base_date else None,last_second,rollover))
             return {"source":str(file),"server":server,"read_events":parsed,"new_events":stored,
-                    "offset":next_offset,"generation":generation,"rotated":rotated}
+                    "offset":next_offset,"generation":generation,"rotated":rotated,
+                    # Incomplete trailing bytes are left unread until a newline arrives.
+                    "pending_bytes":max(0, stat.st_size - next_offset)}
 
 
 def get_events(db_path: str | Path, server: str="default", kind: str | None=None, limit: int=300) -> list[dict]:
