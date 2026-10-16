@@ -70,7 +70,7 @@ async function searchIncidentTimeline(){
  const root=document.getElementById('incidentOutput');
  const start=document.getElementById('incidentStart').value;
  const end=document.getElementById('incidentEnd').value;
- const isSecondPrecision=s=>/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?$/.test(s);
+ const isSecondPrecision=s=>/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(s);
  if(!isSecondPrecision(start)||!isSecondPrecision(end)){root.textContent='Choose a valid start and end time from the server clock.';return;}
  const normalize=s=>s.length===16?s+':00':s;
  root.textContent='Searching imported records…';
