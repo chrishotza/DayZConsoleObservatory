@@ -1,5 +1,6 @@
 """Offline SQLite maintenance regressions with private synthetic players only."""
 import os
+from contextlib import closing
 import sqlite3
 import tempfile
 import unittest
@@ -26,11 +27,11 @@ class MaintenanceTests(unittest.TestCase):
         ingest(self.db, self.adm, "server-b")
 
     def server_count(self, server):
-        with sqlite3.connect(self.db) as db:
+        with closing(sqlite3.connect(self.db)) as db:
             return db.execute("SELECT COUNT(*) FROM events WHERE server=?", (server,)).fetchone()[0]
 
     def undated_count(self, server):
-        with sqlite3.connect(self.db) as db:
+        with closing(sqlite3.connect(self.db)) as db:
             return db.execute(
                 "SELECT COUNT(*) FROM events WHERE server=? AND occurred_at IS NULL", (server,)).fetchone()[0]
 
