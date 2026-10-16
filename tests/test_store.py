@@ -38,9 +38,13 @@ class IngestTests(unittest.TestCase):
         self.assertEqual(len(get_players(self.db)),1)
     def test_append_and_unfinished_line(self):
         self.log.write_text('AdminLog started on 2026-10-14 at 12:00:00\n12:01:00 | pending')
-        self.assertEqual(ingest(self.db,self.log)['new_events'],0)
+        first=ingest(self.db,self.log)
+        self.assertEqual(first['new_events'],0)
+        self.assertEqual(first['pending_bytes'],len('12:01:00 | pending'.encode('utf-8')))
         with self.log.open('a') as f:f.write(' complete\n')
-        self.assertEqual(ingest(self.db,self.log)['new_events'],1)
+        second=ingest(self.db,self.log)
+        self.assertEqual(second['new_events'],1)
+        self.assertEqual(second['pending_bytes'],0)
         self.assertEqual(get_events(self.db)[0]['kind'],'unknown')
     def test_rollover(self):
         self.log.write_text('AdminLog started on 2026-10-14 at 23:56:00\n23:59:30 | late\n00:01:00 | early\n')
