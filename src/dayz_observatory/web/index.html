@@ -1,16 +1,38 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"/><title>DayZ Console Observatory</title><link rel="stylesheet" href="/style.css"/></head>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="description" content="Local-only DayZ Console Observatory: import ADM records, explore historical positions, review incidents."/>
+<title>DayZ Console Observatory · Local workspace</title><link rel="stylesheet" href="/style.css"/></head>
 <body>
-<header><div class="brand"><span class="symbol">◉</span><span>DAYZ <strong>OBSERVATORY</strong></span></div><div class="topline">COMMUNITY OBSERVATORY <span class="pill">LOCAL · READ ONLY</span></div></header>
-<main><section class="intro"><div><p class="eyebrow">MICROSOFT / XBOX ADMINISTRATION</p><h1>Server observability</h1><p class="sub">Event-driven oversight without accessing or modifying the game client.</p></div><div class="meta"><div>DATA MODE</div><strong>Historical observations</strong><small>Timestamp clock belongs to the game server; timezone may be unknown.</small></div></section>
-<div class="stats"><section><span>OBSERVED PLAYERS</span><strong id="playerCount">–</strong></section><section><span>LOGGED EVENTS</span><strong id="eventCount">–</strong></section><section><span>LATEST SAMPLE</span><strong id="lastSample">–</strong></section></div>
-<section class="quality" aria-label="Evidence quality summary"><div><span class="quality-label">DATA INTEGRITY</span><strong>Evidence quality</strong><p>Imported ADM events, not live game telemetry</p></div><div class="quality-metrics"><div><span>POSITION RECORDS</span><strong id="qualityPositions">–</strong></div><div><span>UNDATED EVENTS</span><strong id="qualityUndated">–</strong></div><div><span>UNCLASSIFIED</span><strong id="qualityUnknown">–</strong></div><div><span>LOG SOURCES</span><strong id="qualitySources">–</strong></div></div></section>
-<div class="layout"><section class="panel map-panel"><div class="head"><div><h2>Position explorer</h2><p>Local coordinate plot (X / Z), not satellite imagery</p></div><div class="legend"><span class="dot"></span> Last recorded position</div></div><canvas id="map" width="950" height="630" aria-label="Position coordinate plot"></canvas><p class="hint">Positions are discrete ADM records, often around five minutes apart. The chart does not represent current locations or player visibility.</p></section>
-<section class="panel events-panel"><div class="head"><div><h2>Event stream</h2><p id="eventCaption">Imported observations, newest timestamp first</p></div><div class="filters"><label for="playerFilter">Player</label><select id="playerFilter"><option value="">All players</option></select><select id="kind" aria-label="Event type"><option value="">All types</option><option>position</option><option>connected</option><option>disconnected</option><option>death</option><option>hit</option><option>build</option><option>unknown</option></select></div></div><div class="event-list" id="events"></div></section></div>
-<section class="panel incident-panel" aria-label="Temporal incident investigation">
-<div class="head"><div><h2>Incident timeline</h2><p>Group events by server-local time. Proximity is not proof of interaction.</p></div>
-<div class="incident-inputs"><label>Start <input type="datetime-local" step="1" id="incidentStart"/></label><label>End <input type="datetime-local" step="1" id="incidentEnd"/></label>
-<button id="incidentSearch" type="button">Investigate interval</button></div></div>
-<div id="incidentOutput" class="incident-results" role="status" aria-live="polite">Choose a server-local time interval (maximum 48 hours).</div>
-</section>
-<footer><span>Unofficial community project • Not affiliated with Bohemia Interactive, Microsoft, Xbox or Nitrado</span><span id="status">Loading local data…</span></footer></main><script src="/app.js"></script></body></html>
+<header class="site-header"><div class="site-header-inner"><a class="brand" href="#home" aria-label="DayZ Observatory Home"><span class="brand-mark">DZ</span><span>CONSOLE <strong>OBSERVATORY</strong></span></a>
+<nav aria-label="Workspace navigation"><a href="#workspace">Workspace</a><a href="#positions">Positions</a><a href="#incidents">Incidents</a></nav><span class="header-pill">● LOCAL · NO GAME CHANGES</span></div></header>
+<main id="home">
+<section class="hero"><div><p class="eyebrow">DAYZ · XBOX / MICROSOFT STORE</p>
+<h1>Your community.<br/><span>Your evidence.</span></h1><p class="sub">Import admin logs, investigate incidents and review historical positions. All data stays on this computer.</p>
+<div class="hero-flags"><span>LOCAL-FIRST</span><span>PRIVATE BY DEFAULT</span><span>NOT LIVE ESP</span></div></div>
+<div class="hero-state"><span class="state-label">WHAT YOU ARE VIEWING</span><strong id="modeHeadline">Your imported records</strong><p id="modeDescription">Historical observations only. No server connected.</p><span class="state-tiny">Times reflect the game server clock; the timezone may be unknown.</span></div></section>
+<section class="workspace" id="workspace" aria-label="Get started">
+<div class="workspace-head"><div><p class="eyebrow">01 / GET STARTED</p><h2>Choose your workspace</h2></div>
+<label class="mode-control" for="modeSelect">DATA SOURCE <select id="modeSelect"><option value="local">My ADM records</option><option value="demo">Demo · synthetic only</option></select></label></div>
+<div class="start-grid">
+<div class="start-card"><div class="start-icon">01</div><h3>Import an ADM file</h3>
+<p>Select a DayZ administrator log from your computer. We process it locally, never upload it to a cloud server.</p>
+<div class="file-actions"><label for="admFile" class="file-label">Choose .ADM file</label><input type="file" id="admFile" accept=".ADM,.adm"/><button type="button" id="importButton" class="primary">Import file</button></div><p class="small-note">Up to 8 MiB per file. Import the updated file again to add new records.</p></div>
+<div class="start-card demo-card"><div class="start-icon">02</div><h3>Explore without DayZ</h3>
+<p>Open a separate, clearly labeled synthetic dataset to see positions, activity and incident timelines before importing anything.</p><button type="button" class="secondary" id="demoButton">Launch interactive demo <span aria-hidden="true">↗</span></button>
+<p class="small-note">Demo data is completely isolated from your own records.</p></div></div>
+<div id="workspaceFeedback" class="workspace-feedback" role="status" aria-live="polite">Ready. Import a log or launch the demo.</div></section>
+<section class="stats" aria-label="Historical evidence statistics">
+<div class="stat"><span>PLAYERS WITH POSITIONS</span><strong id="playerCount">—</strong><small>Not an online-player count</small></div>
+<div class="stat"><span>IMPORTED EVENTS</span><strong id="eventCount">—</strong><small>From completed log lines</small></div>
+<div class="stat"><span>LATEST DATED RECORD</span><strong id="lastSample">—</strong><small>Server-local time, not a live feed</small></div></section>
+<section class="quality" aria-label="Evidence quality summary"><div class="quality-title"><span class="eyebrow">DATA INTEGRITY</span><h2>Evidence quality</h2><p>Imported ADM events, not live game telemetry</p></div>
+<div class="quality-metrics"><div><span>POSITION RECORDS</span><strong id="qualityPositions">—</strong></div><div><span>UNDATED EVENTS</span><strong id="qualityUndated">—</strong></div><div><span>UNCLASSIFIED</span><strong id="qualityUnknown">—</strong></div><div><span>LOG SOURCES</span><strong id="qualitySources">—</strong></div></div></section>
+<div class="layout"><section class="panel map-panel" id="positions"><div class="panel-heading"><div><span class="eyebrow">02 / SPATIAL REVIEW</span><h2>Recorded positions</h2><p>Coordinate plane X / Z. This is not a terrain map.</p></div><span class="legend"><span class="dot"></span> Last recorded sample</span></div>
+<canvas id="map" width="950" height="630" role="img" aria-label="Schematic plot of the last imported positions, not live players"></canvas><p class="panel-note">ADM observations are discontinuous, often around five minutes apart. No movement is inferred between points.</p></section>
+<section class="panel events-panel"><div class="panel-heading"><div><span class="eyebrow">03 / ACTIVITY</span><h2>Event stream</h2><p id="eventCaption">Imported observations, newest first</p></div>
+<div class="filters"><label for="playerFilter">Player</label><select id="playerFilter"><option value="">All players</option></select><label for="kind">Type</label><select id="kind"><option value="">All types</option><option>position</option><option>connected</option><option>disconnected</option><option>death</option><option>hit</option><option>build</option><option>unknown</option></select></div></div><div class="event-list" id="events"></div></section></div>
+<section class="panel incident-panel" id="incidents" aria-label="Temporal incident investigation"><div class="panel-heading"><div><span class="eyebrow">04 / INVESTIGATE</span><h2>Incident timeline</h2><p>Group events by server-local time. Proximity is not proof of interaction.</p></div>
+<div class="incident-inputs"><label>Start <input type="datetime-local" step="1" id="incidentStart"/></label><label>End <input type="datetime-local" step="1" id="incidentEnd"/></label><button id="incidentSearch" type="button" class="primary">Investigate interval</button></div></div>
+<div id="incidentOutput" class="incident-results" role="status" aria-live="polite">Choose an interval up to 48 hours. Select a player above to anchor the search.</div></section>
+<footer><span>Unofficial community project · Not affiliated with Bohemia, Nitrado or Microsoft.</span><span id="status">Reading local workspace…</span></footer>
+</main><script src="/app.js"></script></body></html>
