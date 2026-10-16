@@ -10,7 +10,7 @@ Solve actual console-community administration problems while being honest about 
 
 - Nitrado metadata, ADM, log import, privacy-safe diagnostics: implemented with synthetic tests.
 - Bounded foreground polling, rate control, event review and SQLite storage: implemented with synthetic tests; real-host integration requires consenting owner validation.
-- Incidents and audit workflows: continue with privacy-preserving case exports and verified parser fixtures.
+- Temporal incident clustering and privacy-preserving case exports: implemented with offline tests, strict result limits and provenance; expand parser coverage using verified, sanitized ADM fixtures.
 - No false promises of continuously sampled player locations, hardware ban APIs or live admin control.
 
 ## Workstream B: advanced in-game admin capabilities (proposal only)

@@ -23,7 +23,7 @@ Not a cheat or an in-game admin mod. Designed for the Microsoft/Xbox version whe
 - Log classification is deliberately conservative. Unknown lines are kept for future parser development, but not all damage/build log grammars are supported yet.
 - The dashboard is a coordinate plane, not licensed DayZ terrain imagery. Mapping profiles including Nasdara will need verified transforms and legally reusable tiles.
 - The Nitrado adapter downloads up to three recent ADM logs by default (up to 20 with `--max-files`). It skips unchanged full downloads only when remote size and mtime are usable. **Remote byte-range `seek` is not implemented**. A same-size rewrite with unchanged mtime requires `--force` to detect.
-- Truncation and inode/prefix checks cover common rotation scenarios; an overwritten log with identical prefix, inode and length is not detectable by this v0.1 mechanism.
+- Local ingestion rechecks the SHA-256 of all previously consumed bytes, including in-place rewrites; the remote Nitrado cache still relies on reported size/mtime unless `--force` is used. A log tampered with upstream before download cannot be independently authenticated.
 - No ban/whitelist writes, online player state modification, ESP-in-game, free camera, invisibility, or teleports. This project must not claim to provide undocumented console APIs.
 
 Para instrucciones en español, consulta [README.es.md](README.es.md).
@@ -143,9 +143,10 @@ Read [owner-only field validation](docs/NITRADO_VALIDATION.md). Use `--max-files
 ## Roadmap
 
 1. **v0.1–v0.3:** Parser, SQLite, investigation timeline, reliability/security and CI.
-2. **v0.4 (offline-tested):** Multi-file log synchronization, metadata-based caching, safe dry-run/force, bounded HTTP retry and regression tests.
-3. **Next:** Validate Nitrado permissions and genuine log behaviors with a consenting server owner. Implement remote partial reads only after official API verification.
-4. **Later:** Properly licensed map imagery, privacy retention controls and any officially supported moderation integration.
+2. **v0.4–v0.5 (offline-tested):** Multi-file Nitrado synchronization, bounded foreground polling, simulated end-to-end validation and confidential player case exports.
+3. **v0.6 (offline-tested):** Server-local temporal incident clustering, anchored context, aggregate-only and private exports, local timeline UI and API.
+4. **Next:** Verify actual Nitrado Xbox responses with a consenting owner, improve parser grammar and add explicit data-retention controls.
+5. **Later:** Approved map imagery and any formally authorized in-game moderation/spectator interface.
 
 ## References
 

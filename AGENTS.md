@@ -1,48 +1,58 @@
-# AI engineering handoff: DayZ Console Observatory
+# Engineering handoff · DayZ Console Observatory (v0.6.0)
 
-Project goal: legitimate, read-only administrative observability for DayZ Microsoft Store/Xbox (Nitrado). Source is open under MIT. Never imply official affiliation.
+**Purpose:** source-first, local-only analysis for DayZ Microsoft Store PC / Xbox Nitrado community servers. MIT, independent and unaffiliated. Maintain documented limits; do not claim in-game ESP, freecam, invisibility, teleportation or verified live Nitrado integration.
 
-## Verified locally
-- Python package entrypoint: `dayz-observe` (`src/dayz_observatory/cli.py`).
-- ADM parser: `src/dayz_observatory/parser.py`. `pos=<X,Z,altitude>`; accepts optional `-`; preserves unknown timestamped lines.
-- SQLite ingest: `src/dayz_observatory/store.py`. Byte offsets, pending line retry, rotation generation, rollover, chronological last-known position.
-- `src/dayz_observatory/server.py`: loopback-only read API and static dashboard. No authentication; do NOT expose publicly.
-- `src/dayz_observatory/nitrado.py`: read-only Microsoft/Xbox Nitrado API adapter. **Untested live; needs authorized service integration tests.**
-- Tests: `PYTHONPATH=src python -m unittest discover -s tests -v` (24 passing as of 2026-10-15).
+## Minimal entrypoints
 
-## Priorities (order)
-1. Audit all API assumptions against documented Nitrado Xbox gameserver permissions; use private sample HTTP payloads with tokens removed.
-2. Add mock tests for Nitrado HTTP success/fail and `download` token format. Keep strict SSRF and token protection.
-3. Add robust incremental API `seek` support *after* validation; stay under provider rate limits.
-4. Normalize event classes using **anonymized**, verified ADM/RPT grammar from multiple DayZ versions.
-5. Add time-zone handling, import timestamps, retention/export controls and admin-only auth before public deployment.
-6. Add validated map coordinate transforms and legally licensed terrain imagery for Chernarus/Livonia/Sakhal/Nasdara.
-7. Write permissions-checked moderation operations only after explicit human approval flows and server-level tests.
+- Install offline source: `python -m pip install -e .` (requires Python 3.10+).
+- Core tests: `python -W error::ResourceWarning -m unittest discover -s tests -v`.
+- Simulated Nitrado transport end-to-end: `dayz-observe selftest` (no credentials, no network).
+- Historical sample: `dayz-observe ingest samples/SYNTHETIC_dayz.ADM --db observatory.db`.
+- Local dashboard: `dayz-observe dashboard --db observatory.db` (127.0.0.1 only).
+- CLI reference: `dayz-observe --help`; then `dayz-observe COMMAND --help`.
 
-## Non-goals / safety
-No client injection, anticheat bypass, unauthorized client memory access, in-game freecam/ESP/teleport, blanket device bans or unverified 'realtime' claims. Console positions typically sample every ~5 minutes. Do not infer live whereabouts.
+## Source navigation by intention
 
-## Suggested division
-- Claude: API security, parser correctness, moderation authorization.
-- Gemini: frontend, map math, field validation, bilingual UX.
-- Grok: official source verification, third-party interface audit, compatibility matrix.
+| Task | Source | Safety invariant |
+| --- | --- | --- |
+| Parse ADM logs | `src/dayz_observatory/parser.py` | Positions are `X,Z,altitude`; unrecognized events must not be invented |
+| Import & quality | `store.py` | SQLite isolation, idempotence, complete lines, consumed-prefix SHA-256, no guessed UTC |
+| Player timeline | `investigate.py` | No proof of live presence from an open session |
+| Individual evidence | `casebook.py` | Aggregate-only by default; private output requires `--private` |
+| Temporal incidents | `incidents.py` | Clusters mean time proximity, not causality; cap 2,000 and 48 hours |
+| Local REST/UI | `server.py`, `web/` | Bind loopback only, never expose without access control |
+| Nitrado transport | `nitrado.py` | GET-only; authenticated requests and signed downloads stay separated |
+| Remote sync | `sync.py` | Metadata-based cache, atomic files, RPT opt-in, strict destinations |
+| Foreground poll | `watch.py` | Default 300 s, minimum 60 s, 3 consecutive errors halt |
+| Anonymous diagnostics | `beta.py`, `selftest.py` | No identifying metadata or hidden telemetry |
+| Entrypoints | `cli.py`, `pyproject.toml` | Consistent CLI flags/version and safe default disclosure |
 
-## Naming
-Public project: DayZ Console Observatory. GitHub slug suggestion: `dayz-console-observatory`. Python distribution: `dayz-console-observatory`. Binary: `dayz-observe`.
+Tests live in `tests/` and run in GitHub Actions for Python 3.10, 3.12 and 3.13. Frontend contract tests use Node if present and static checks otherwise. CI evidence is authoritative; **do not claim passing tests or real-server validation without verifying a completed run**.
 
-## v0.4 integration
-- `src/dayz_observatory/sync.py` offers read-only whole-file caching based on remote size/mtime and local SHA-256.
-- `dayz-observe nitrado SERVICE_ID --dry-run` previews downloads without writing local files.
-- `--include-rpt` is opt-in; remote range `seek` is NOT implemented. Never describe log coordinates as live ESP.
-- Validate without DayZ: `python -W error::ResourceWarning -m unittest discover -s tests -v`.
+## Research/implementation ownership
 
-## v0.5 watch rules
-- `dayz-observe nitrado SERVICE_ID --watch --interval 300` repeatedly calls the existing read-only sync in the foreground.
-- Never persist credentials, expose server identifiers in watch output, or silently loosen the minimum 60-second interval.
-- Stop after 3 consecutive failed/partial cycles; tests inject fake transports, not real remote tokens.
-- Position snapshots remain about 5 minutes apart: a faster poll is not live ESP.
+- **API & security desk:** official Nitrado endpoints, data limits, auth scope, SSRF/redirect boundary, credential handling.
+- **Scientific methods desk:** sparse player snapshots, sampling uncertainty and false-positive analysis.
+- **Product/UX desk:** local case review, mobile/accessibility, verified coordinate map overlays with legally usable assets.
+- **Parser/forensics desk:** sanitized fixtures, precise source provenance, temporal ordering, audit integrity.
+- **Open-source quality desk:** license review, PR tests, dependency monitoring, error reproduction and docs consistency.
+- **Publisher integration desk:** Bohemia approvals for console in-game admin functions. No API exists in this project to modify live player state.
 
-## v0.5.1 evidence rules
-- `dayz-observe case PLAYER_ID --out report.json` defaults to aggregate-only output. `--private` intentionally includes identifiable raw records; never attach those to public issues.
-- Fingerprints are consistency checks, not proof that a server event is genuine. Preserve explicit limitations of sparse ADM samples.
-- Ingest rechecks consumed-prefix SHA-256 even if inode, size and leading bytes did not change. Tests must cover in-place rewrites.
+Claude, Gemini and Grok may contribute independently with explicitly shared evidence; **do not claim a model, plugin, team or publisher was contacted unless a real tool action succeeded**.
+
+## Red lines & verification gates
+
+1. No player names, service IDs, tokens, signed URLs, precise coordinates, private RPT/ADM or full incident reports in public GitHub Issues/PRs.
+2. Local identifiers are sensitive. `incidents` and `case` default to aggregate-only reports. `--private` is a deliberate confidential action. Hashes are not server attestations.
+3. Never turn anomaly patterns into automated accusations, bans or claims of real-time ESP. Five-minute snapshots do not support live tracking.
+4. Remote file range `seek` is not implemented. Nitrado production compatibility remains **unverified** until a consenting server owner tests it.
+5. Explicit Bohemia/platform permission and a documented server-side interface are required before any in-game spectator, invisibility or teleport integration.
+6. Follow `docs/PRODUCT_STRATEGY.md`, `docs/INCIDENT_INVESTIGATION.md`, `docs/CASE_EVIDENCE.md` and `SECURITY.md` before scope changes.
+
+## Pull request acceptance
+
+- Run all offline tests on source modifications; add a regression for every defect.
+- Preserve privacy defaults, service isolation, clock assumptions and exact historical provenance.
+- Update English/Spanish docs and `CHANGELOG.md` for visible features.
+- Verify the HEAD commit and completed CI run after GitHub writes.
+- No unsolicited community or company outreach while the project owner has deferred it.
