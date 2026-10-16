@@ -31,6 +31,13 @@ class FrontendContractTests(unittest.TestCase):
                               timeout=10, check=True)
         self.assertEqual(json.loads(proc.stdout), [True, True, False, False])
 
+    def test_import_feedback_mentions_unfinished_lines_without_raw_contents(self):
+        script = (WEB / "app.js").read_text(encoding="utf-8")
+        self.assertIn("Number(imported.pending_bytes)||0", script)
+        self.assertIn("An unfinished final line", script)
+        self.assertIn("Re-import after the log finishes that line", script)
+        self.assertNotIn("innerHTML", script)
+
     def test_timeline_uses_dom_safe_text_rendering_and_disclaimer(self):
         script = (WEB / "app.js").read_text(encoding="utf-8")
         document = (WEB / "index.html").read_text(encoding="utf-8")

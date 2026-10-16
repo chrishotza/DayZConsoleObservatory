@@ -96,7 +96,13 @@ async function importADM(){
    method:'POST',headers:{...postHeaders,'Content-Type':'application/octet-stream'},body:await file.arrayBuffer()});
   if(!response.ok)throw Error();
   const imported=await response.json();state.scope='local';state.selectedId='';$('modeSelect').value='local';await refresh();
-  setFeedback('Imported '+imported.new_events+' new event(s). '+(imported.new_events===0?'No new complete log lines found.':'Records are now shown below.'));
+  const pending=Number(imported.pending_bytes)||0;
+  const note=pending>0
+   ? ' An unfinished final line ('+pending+' bytes) was not imported yet. Re-import after the log finishes that line.'
+   : imported.new_events===0
+    ? ' No new complete log events found.'
+    : ' Records are now shown below.';
+  setFeedback('Imported '+imported.new_events+' new event(s).'+note);
  }catch{setFeedback('Import failed. Check .ADM format and 8 MiB limit; no remote service was contacted.');}
  finally{button.disabled=false;}
 }

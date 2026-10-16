@@ -59,6 +59,33 @@ class BrowserImportTests(unittest.TestCase):
             self.assertEqual(json.load(response)["new_events"], 1)
         self.assertEqual(self.get("/api/quality")["events"], 2)
 
+    def test_pending_partial_line_is_reported_without_leaking_log_content(self):
+        path = "/api/import?name=example.ADM"
+        complete = (b"AdminLog started on 2026-10-15 at 12:00:00\n"
+                    b"12:00:00 | synthetic first event\n")
+        fragment = b"12:01:00 | synthetic unfinished"
+        with self.post(path, complete + fragment, content_type="application/octet-stream") as response:
+            raw = response.read().decode("utf-8")
+            first = json.loads(raw)
+        self.assertEqual(first["new_events"], 1)
+        self.assertEqual(first["pending_bytes"], len(fragment))
+        self.assertNotIn("synthetic unfinished", raw)
+        self.assertNotIn("example.ADM", raw)
+        self.assertNotIn(str(self.root), raw)
+        self.assertEqual(self.get("/api/quality")["events"], 1)
+
+        with self.post(path, complete + fragment + b" line\n",
+                       content_type="application/octet-stream") as response:
+            after = json.load(response)
+        self.assertEqual(after["new_events"], 1)
+        self.assertEqual(after["pending_bytes"], 0)
+        with self.post(path, complete + fragment + b" line\n",
+                       content_type="application/octet-stream") as response:
+            repeated = json.load(response)
+        self.assertEqual(repeated["new_events"], 0)
+        self.assertEqual(repeated["pending_bytes"], 0)
+        self.assertEqual(self.get("/api/quality")["events"], 2)
+
     def test_demo_is_isolated_from_owner_records_and_idempotent(self):
         with self.post("/api/demo") as response:
             report = json.load(response)

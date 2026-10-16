@@ -59,6 +59,7 @@ def _local_import(db_path: str, server: str, name: str, payload: bytes) -> dict:
         result = ingest(db_path, target, server)
         return {"new_events": result["new_events"],
                 "read_events": result["read_events"],
+                "pending_bytes": result["pending_bytes"],
                 "historical_only": True}
     finally:
         if temporary is not None:
