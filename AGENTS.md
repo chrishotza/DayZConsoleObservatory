@@ -29,7 +29,7 @@ python launcher.py --check
 python -m compileall -q src tests launcher.py
 ```
 
-GitHub Actions also tests Linux Python 3.10/3.12/3.13 and Windows 3.12. **A passing test does not validate real Nitrado behavior.**
+GitHub Actions also tests Linux Python 3.10/3.12/3.13/3.14, Windows 3.12/3.14, and macOS 3.12/3.14. **A passing test does not validate real Nitrado behavior.**
 
 ## Security invariants
 

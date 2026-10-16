@@ -39,4 +39,4 @@ The **Nitrado connector** is an optional advanced command-line tool, not yet val
 - No timestamps: DayZ ADM headers may be missing or the log date may not be available; no UTC is assumed.
 - For developer checks: `python launcher.py --check` and `python -m unittest discover -s tests -v`.
 
-**Status:** CI tests Linux and Windows offline; no DayZ/Nitrado real-server validation yet.
+**Status:** CI tests Linux, Windows, and macOS offline (including Python 3.14). Automated platform smoke tests do not replace independent hardware validation or real DayZ/Nitrado service validation.
