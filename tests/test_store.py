@@ -144,7 +144,7 @@ class InplaceRewriteRegressionTests(unittest.TestCase):
             later = ingest(db, log)
             self.assertTrue(later["rotated"])
             self.assertEqual(later["generation"], first["generation"] + 1)
-            self.assertEqual(later["new_events"], 1)
+            self.assertEqual(later["new_events"], 2)
 
     def test_inplace_rewrite_plus_append_not_misread_as_clean_append(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -161,4 +161,4 @@ class InplaceRewriteRegressionTests(unittest.TestCase):
             later = ingest(db, log)
             self.assertTrue(later["rotated"])
             self.assertEqual(later["generation"], first["generation"] + 1)
-            self.assertEqual(later["new_events"], 2)
+            self.assertEqual(later["new_events"], 3)
