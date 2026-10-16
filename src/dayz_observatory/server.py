@@ -74,6 +74,11 @@ def make_server(db_path: str, server: str = "default", port: int = 8765) -> Thre
             return DEMO_SERVER if query.get("scope", ["local"])[0] == "demo" else server
 
         def do_GET(self):
+            # Reject DNS-rebinding requests even for read-only endpoints:
+            # history endpoints include private player details and raw clock data.
+            if self.headers.get("Host") != f"127.0.0.1:{self.server.server_port}":
+                self.send_error(403, "Local browser host required")
+                return
             request = urlsplit(self.path)
             if request.path in ("/api/events", "/api/players", "/api/investigate",
                                 "/api/known-players", "/api/quality", "/api/incidents"):

@@ -119,6 +119,23 @@ class BrowserImportTests(unittest.TestCase):
         self.assertNotIn("private.ADM", dumped)
         self.assertNotIn(str(self.root), dumped)
 
+    def test_private_get_api_rejects_dns_rebinding_host(self):
+        request = urllib.request.Request(
+            self.url + "/api/players", headers={"Host": "remote.example"})
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(request, timeout=3)
+        self.assertEqual(ctx.exception.code, 403)
+
+    def test_browser_onboarding_controls_exist(self):
+        with urllib.request.urlopen(self.url, timeout=3) as response:
+            page = response.read().decode("utf-8")
+        for control in ("modeSelect", "admFile", "importButton", "demoButton",
+                        "incidentStart", "incidentEnd", "incidentSearch"):
+            with self.subTest(control=control):
+                self.assertIn('id="' + control + '"', page)
+        self.assertIn("SYNTHETIC", page)
+        self.assertNotIn("NITRADO_TOKEN", page)
+
     def test_unknown_route_is_not_a_write_operation(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self.post("/api/settings", b"{}", content_type="application/octet-stream")
