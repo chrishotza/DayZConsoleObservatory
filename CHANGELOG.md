@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Hardened synthetic-tested ADM parser: reject invalid header dates/times and non-finite coordinates without fabricating observations.
+- Avoid false death/combat/building matches from keywords embedded within other words, while preserving unknown timestamped records.
+- Added parser and SQLite ingestion regression tests; real-world ADM coverage still requires consent-based validation.
+
 ## 0.8.0 — 2026-10-16
 
 - Rebuilt browser workspace with a clear first-run flow, private local ADM upload and isolated synthetic demonstration.

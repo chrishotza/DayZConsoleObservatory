@@ -9,6 +9,28 @@ class IngestTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.db=Path(self.tmp.name)/'db.sqlite'
         self.log=Path(self.tmp.name)/'test.ADM'
+    def test_invalid_header_does_not_crash_ingestion_or_invent_date(self):
+        self.log.write_text(
+            'AdminLog started on 2026-02-30 at 12:00:00\n'
+            '12:01:00 | synthetic observation\n', encoding='utf-8'
+        )
+        self.assertEqual(ingest(self.db, self.log)['new_events'], 1)
+        self.assertIsNone(get_events(self.db)[0]['occurred_at'])
+        self.assertEqual(ingest(self.db, self.log)['new_events'], 0)
+
+    def test_non_finite_coordinates_are_not_stored(self):
+        huge = '9' * 400
+        self.log.write_text(
+            'AdminLog started on 2026-10-15 at 12:00:00\n'
+            '12:01:00 | Player "SYNTH" (id=SYNTH_ID pos=<' +
+            huge + ', 3, 4>)\n', encoding='utf-8'
+        )
+        self.assertEqual(ingest(self.db, self.log)['new_events'], 1)
+        event = get_events(self.db)[0]
+        self.assertEqual(event['kind'], 'unknown')
+        self.assertIsNone(event['x'])
+        self.assertEqual(get_players(self.db), [])
+
     def test_deduplication(self):
         self.log.write_text('AdminLog started on 2026-10-14 at 12:00:00\n12:01:00 | Player "SYNTH" (id=SYNTHID pos=<1, 2, 3>)\n')
         self.assertEqual(ingest(self.db,self.log)['new_events'],1)

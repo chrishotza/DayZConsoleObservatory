@@ -31,4 +31,42 @@ class ParserTests(unittest.TestCase):
         dt,_,_=event_datetime('00:02:00',None,None,0)
         self.assertIsNone(dt)
 
+    def test_invalid_calendar_day_and_header_clock_are_ignored(self):
+        self.assertIsNone(parse_header('AdminLog started on 2026-02-30 at 12:00:00'))
+        self.assertIsNone(parse_header('AdminLog started on 2026-10-15 at 25:00:00'))
+        self.assertEqual(parse_header('AdminLog started on 2024-02-29 at 23:59:59'),
+                         date(2024, 2, 29))
+
+    def test_synthetic_combat_and_building_words_are_whole_tokens(self):
+        for fragment, expected in (
+            ('Player "SYNTH" (id=SYNTH_1) was killed by unknown', 'death'),
+            ('Player "SYNTH" (id=SYNTH_1) hit by object', 'hit'),
+            ('Player "SYNTH" (id=SYNTH_1) has dismantled a structure', 'build'),
+            ('Player "SYNTH" (id=SYNTH_1) studied the record', 'unknown'),
+            ('Player "SYNTH" (id=SYNTH_1) rebuilt the notes', 'unknown'),
+            ('Player "SYNTH" (id=SYNTH_1) listed damaged items', 'unknown'),
+        ):
+            with self.subTest(fragment=fragment):
+                event = parse_line('12:01:00 | ' + fragment)
+                self.assertEqual(event.kind, expected)
+                self.assertEqual(event.player_id, 'SYNTH_1')
+
+    def test_non_finite_synthetic_position_does_not_enter_coordinates(self):
+        huge = '9' * 400
+        event = parse_line(
+            '12:01:00 | Player "SYNTH" (id=SYNTH_1 pos=<' +
+            huge + ', 2, 3>)'
+        )
+        self.assertEqual(event.kind, 'unknown')
+        self.assertEqual(event.player_id, 'SYNTH_1')
+        self.assertIsNone(event.x)
+        self.assertIsNone(event.z)
+        self.assertIsNone(event.altitude)
+        self.assertIn(huge, event.raw)
+
+    def test_ordinary_synthetic_position_still_parses(self):
+        event = parse_line('12:00:01 | Player "SYNTH" (id=SYNTH_1 pos=<-2, 3.5, 4>)')
+        self.assertEqual(event.kind, 'position')
+        self.assertEqual((event.x, event.z, event.altitude), (-2.0, 3.5, 4.0))
+
 if __name__=='__main__':unittest.main()
