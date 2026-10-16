@@ -13,6 +13,7 @@ from .sync import sync_once
 from .beta import probe_nitrado, offline_beta_report
 from .selftest import run_selftest, SelfTestError
 from .watch import watch_foreground
+from .casebook import build_case, save_case
 
 
 def main(argv=None) -> None:
@@ -32,6 +33,13 @@ def main(argv=None) -> None:
     q.add_argument("--db", default="observatory.db")
     q.add_argument("--server", default="default")
     q.add_argument("--limit", type=int, default=300)
+    case = sub.add_parser("case", help="Save an aggregate-only player evidence summary by default")
+    case.add_argument("player_id", help="Exact stable player ID (kept out of terminal output)")
+    case.add_argument("--db", default="observatory.db")
+    case.add_argument("--server", default="default")
+    case.add_argument("--out", required=True, help="Destination JSON, must not already exist")
+    case.add_argument("--limit", type=int, default=500)
+    case.add_argument("--private", action="store_true", help="Explicitly include raw player IDs, names, coordinates and evidence lines")
     audit = sub.add_parser("audit", help="Inspect evidence quality without DayZ or Nitrado")
     audit.add_argument("--db", default="observatory.db")
     audit.add_argument("--server", default="default")
@@ -67,6 +75,13 @@ def main(argv=None) -> None:
             serve(args.db,args.server,args.port)
         elif args.cmd == "investigate":
             print(json.dumps(player_history(args.db, args.server, args.player_id, args.limit), indent=2))
+        elif args.cmd == "case":
+            result = build_case(args.db, args.server, args.player_id,
+                                private=args.private, limit=args.limit)
+            save_case(args.out, result)
+            print(json.dumps({"saved": True, "disclosure": result["disclosure"],
+                              "events": result["event_count"],
+                              "truncated": result["truncated"]}, sort_keys=True))
         elif args.cmd == "audit":
             print(json.dumps(get_quality_report(args.db, args.server), indent=2))
         elif args.cmd == "beta-report":

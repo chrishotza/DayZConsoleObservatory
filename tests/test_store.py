@@ -125,3 +125,40 @@ class AtomicDownloadRegressionTests(unittest.TestCase):
         with closing(sqlite3.connect(self.db)) as connection:
             cols = [r[1] for r in connection.execute("PRAGMA table_info(sources)")]
         self.assertIn("content_hash", cols)
+
+class InplaceRewriteRegressionTests(unittest.TestCase):
+    def test_same_inode_same_size_rewrite_generates_new_source_generation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            db, log = root / "db.sqlite", root / "active.ADM"
+            beginning = (b"AdminLog started on 2026-10-15 at 12:00:00\\n"
+                         + b"12:00:00 | " + b"A"*160 + b"\\n")
+            log.write_bytes(beginning + b"12:01:00 | before\\n")
+            first = ingest(db, log)
+            inode = log.stat().st_ino
+            with log.open("r+b") as file:
+                file.seek(0)
+                file.write(beginning + b"12:01:00 | after!\\n")
+                file.truncate()
+            self.assertEqual(log.stat().st_ino, inode)
+            later = ingest(db, log)
+            self.assertTrue(later["rotated"])
+            self.assertEqual(later["generation"], first["generation"] + 1)
+            self.assertEqual(later["new_events"], 1)
+
+    def test_inplace_rewrite_plus_append_not_misread_as_clean_append(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            db, log = root / "db.sqlite", root / "active.ADM"
+            beginning = (b"AdminLog started on 2026-10-15 at 12:00:00\\n"
+                         + b"12:00:00 | " + b"A"*160 + b"\\n")
+            log.write_bytes(beginning + b"12:01:00 | before\\n")
+            first = ingest(db, log)
+            with log.open("r+b") as file:
+                file.seek(0)
+                file.write(beginning + b"12:01:00 | after!\\n12:02:00 | new\\n")
+                file.truncate()
+            later = ingest(db, log)
+            self.assertTrue(later["rotated"])
+            self.assertEqual(later["generation"], first["generation"] + 1)
+            self.assertEqual(later["new_events"], 2)

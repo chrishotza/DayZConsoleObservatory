@@ -52,6 +52,11 @@ dayz-observe nitrado YOUR_SERVICE_ID --watch --interval 300
 
 Watch defaults to **one sync attempt every 300 seconds** (minimum 60), stops after three consecutive failed/partial cycles, and prints only aggregate, non-identifying counts. Ctrl+C stops it. This polling does **not** create live positions or bypass any platform restrictions. Live Xbox/Nitrado service behavior remains unverified. See [watch-mode engineering guide](docs/WATCH_MODE.md).
 
+
+## Case exports and privacy (v0.5.1)
+
+Use `dayz-observe case PLAYER_ID --db observatory.db --out case-summary.json` to create a **privacy-preserving aggregate report** by default. To include private raw evidence for your own review, explicitly add `--private` and use a separate, non-public filename. Existing files are never overwritten, and private identifiers are not printed to the terminal. See [case evidence guide](docs/CASE_EVIDENCE.md). Same-inode ADM rewrites are now detected using consumed-range SHA-256 checks.
+
 ## Quick start (offline demo)
 
 From the project directory:

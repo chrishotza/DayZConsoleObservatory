@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.1 — 2026-10-15
+
+- Added aggregate-only case summaries and explicit private incident exports with per-record fingerprints.
+- Enforced owner-only, exclusive new-file creation for evidence JSON; reports cannot overwrite existing paths.
+- Hardened ADM ingester to detect same-inode, same-size rewrites and replaced consumed bytes.
+- Added privacy regression tests and human-review evidence documentation.
+- Still requires field validation against a consenting Xbox/Nitrado server owner.
+
+
 ## 0.5.0 — 2026-10-15
 
 - Added foreground watch mode for bounded, read-only Nitrado sync; conservative 300-second default and hard 60-second minimum.

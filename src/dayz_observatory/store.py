@@ -78,24 +78,25 @@ def ingest(db_path: str | Path, source: str | Path, server: str="default") -> di
                 (stat.st_dev != row["device"] and row["device"] != 0)
             ))
             prefix_changed = bool(row and current_prefix[:len(prev_prefix)] != prev_prefix)
-            # Downloads are atomic replacements: changed inode alone does not
-            # prove a rotated file. Confirm ALL consumed bytes are unchanged.
-            continued = False
-            if row and identity_changed and not prefix_changed and stat.st_size >= offset:
-                saved_hash = row["content_hash"]
-                if saved_hash:
-                    fh.seek(0)
-                    digest = hashlib.sha256()
-                    remaining = offset
-                    while remaining:
-                        block = fh.read(min(256 * 1024, remaining))
-                        if not block:
-                            break
-                        digest.update(block)
-                        remaining -= len(block)
-                    continued = remaining == 0 and digest.hexdigest() == saved_hash
+            # Do not trust inode, size, or a short prefix. A provider may
+            # rewrite the consumed bytes in place without changing any of them.
+            # Comparing the consumed SHA-256 also handles atomic replacements.
+            saved_hash = row["content_hash"] if row else None
+            consumed_changed = False
+            if row and not prefix_changed and stat.st_size >= offset and saved_hash:
+                fh.seek(0)
+                digest = hashlib.sha256()
+                remaining = offset
+                while remaining:
+                    block = fh.read(min(256 * 1024, remaining))
+                    if not block:
+                        break
+                    digest.update(block)
+                    remaining -= len(block)
+                consumed_changed = remaining != 0 or digest.hexdigest() != saved_hash
             rotated = bool(row and (
-                stat.st_size < offset or prefix_changed or (identity_changed and not continued)
+                stat.st_size < offset or prefix_changed or consumed_changed
+                or (identity_changed and not saved_hash)
             ))
             if rotated:
                 generation += 1

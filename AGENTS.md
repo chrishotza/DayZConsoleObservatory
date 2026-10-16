@@ -41,3 +41,8 @@ Public project: DayZ Console Observatory. GitHub slug suggestion: `dayz-console-
 - Never persist credentials, expose server identifiers in watch output, or silently loosen the minimum 60-second interval.
 - Stop after 3 consecutive failed/partial cycles; tests inject fake transports, not real remote tokens.
 - Position snapshots remain about 5 minutes apart: a faster poll is not live ESP.
+
+## v0.5.1 evidence rules
+- `dayz-observe case PLAYER_ID --out report.json` defaults to aggregate-only output. `--private` intentionally includes identifiable raw records; never attach those to public issues.
+- Fingerprints are consistency checks, not proof that a server event is genuine. Preserve explicit limitations of sparse ADM samples.
+- Ingest rechecks consumed-prefix SHA-256 even if inode, size and leading bytes did not change. Tests must cover in-place rewrites.

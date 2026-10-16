@@ -2,7 +2,7 @@
 
 Herramienta **gratuita, abierta e independiente** para supervisar servidores comunitarios de **DayZ Microsoft Store PC / Xbox** sin modificar el cliente del juego.
 
-> **Versión 0.5.0, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
+> **Versión 0.5.1, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
 
 ## Funciones que ya incluye
 
@@ -37,6 +37,11 @@ dayz-observe nitrado TU_ID --watch --interval 300
 ~~~
 
 El programa consulta como máximo una vez cada 300 segundos de forma predeterminada (mínimo 60), detiene las peticiones después de tres ciclos consecutivos con errores y solo muestra conteos anónimos. Se detiene con Ctrl+C. No obtiene coordenadas en vivo. La compatibilidad real con Nitrado sigue sin comprobarse. Ver [guía de operación](docs/WATCH_MODE.md).
+
+
+## Exportación de casos y privacidad (v0.5.1)
+
+El comando `dayz-observe case ID_JUGADOR --db observatory.db --out resumen.json` crea un **informe agregado sin identidades** de forma predeterminada. Para incluir registros privados completos en un archivo local, agregá explícitamente `--private` y no lo compartas públicamente. Nunca sobrescribe archivos existentes. Ver [guía de evidencia](docs/CASE_EVIDENCE.md). Se detectan además reescrituras ADM in situ mediante SHA-256.
 
 ## Comenzar con datos de demostración
 
