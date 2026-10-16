@@ -39,6 +39,19 @@ Read the [community beta guide](docs/COMMUNITY_BETA.md) and [submit a beta repor
 
 You can contribute without owning DayZ. Run **dayz-observe selftest** to exercise an entirely offline simulated Nitrado service, then visit the [community roadmap](docs/COMMUNITY_ROADMAP.md) for beginner tasks, quality assurance, translations, synthetic parser fixtures and UI improvements. Open an issue or a pull request with sanitized evidence only. Passing selftest is not proof of compatibility with a real Nitrado server.
 
+
+## Foreground monitoring (experimental)
+
+After the private, read-only metadata probe succeeds, run the **bounded, foreground** monitor from your own terminal:
+
+~~~powershell
+$env:NITRADO_TOKEN = "<your-token-on-your-computer>"
+dayz-observe nitrado YOUR_SERVICE_ID --watch --dry-run --cycles 2
+dayz-observe nitrado YOUR_SERVICE_ID --watch --interval 300
+~~~
+
+Watch defaults to **one sync attempt every 300 seconds** (minimum 60), stops after three consecutive failed/partial cycles, and prints only aggregate, non-identifying counts. Ctrl+C stops it. This polling does **not** create live positions or bypass any platform restrictions. Live Xbox/Nitrado service behavior remains unverified. See [watch-mode engineering guide](docs/WATCH_MODE.md).
+
 ## Quick start (offline demo)
 
 From the project directory:

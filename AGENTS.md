@@ -35,3 +35,9 @@ Public project: DayZ Console Observatory. GitHub slug suggestion: `dayz-console-
 - `dayz-observe nitrado SERVICE_ID --dry-run` previews downloads without writing local files.
 - `--include-rpt` is opt-in; remote range `seek` is NOT implemented. Never describe log coordinates as live ESP.
 - Validate without DayZ: `python -W error::ResourceWarning -m unittest discover -s tests -v`.
+
+## v0.5 watch rules
+- `dayz-observe nitrado SERVICE_ID --watch --interval 300` repeatedly calls the existing read-only sync in the foreground.
+- Never persist credentials, expose server identifiers in watch output, or silently loosen the minimum 60-second interval.
+- Stop after 3 consecutive failed/partial cycles; tests inject fake transports, not real remote tokens.
+- Position snapshots remain about 5 minutes apart: a faster poll is not live ESP.

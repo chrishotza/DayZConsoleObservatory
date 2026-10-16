@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 — 2026-10-15
+
+- Added foreground watch mode for bounded, read-only Nitrado sync; conservative 300-second default and hard 60-second minimum.
+- Added aggregate-only JSON polling output, automatic stop after three consecutive unsuccessful cycles, and offline watch regression tests.
+- Clarified product tracks: externally verifiable observability versus proposed, permissioned in-game capabilities.
+- No live Nitrado integration validation or publisher authorization yet.
+
+
 ## 0.4.2 — 2026-10-15
 
 - Added an entirely offline, end-to-end Nitrado API simulation: dayz-observe selftest.
