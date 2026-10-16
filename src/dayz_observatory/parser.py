@@ -5,8 +5,8 @@ Positions are observations, never predictions. Unrecognized timestamped lines ar
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-import re
 import math
+import re
 
 HEADER = re.compile(r"AdminLog started on\s+(?P<date>\d{4}-\d{2}-\d{2})\s+at\s+(?P<time>\d{2}:\d{2}:\d{2})", re.I)
 CLOCK = re.compile(r"^\s*(?P<clock>\d{2}:\d{2}:\d{2})\s*\|\s*(?P<body>.*)$")
@@ -15,9 +15,9 @@ POS = re.compile(r'(?<![a-z])pos\s*=\s*<\s*(?P<x>-?\d+(?:\.\d+)?),\s*(?P<z>-?\d+
 
 # Keep the deliberately small, synthetic-tested event grammar conservative.
 # Whole words avoid false positives such as "studied" being labeled "died".
-DEATH = re.compile(r"\\b(?:killed by|was killed|died)\\b", re.I)
-HIT = re.compile(r"\\b(?:hit by|damage)\\b|\\bhit\\s*\\(", re.I)
-BUILD = re.compile(r"\\b(?:placed|built|dismantled)\\b", re.I)
+DEATH = re.compile(r"\b(?:killed by|was killed|died)\b", re.I)
+HIT = re.compile(r"\b(?:hit by|damage)\b|\bhit\s*\(", re.I)
+BUILD = re.compile(r"\b(?:placed|built|dismantled)\b", re.I)
 
 
 @dataclass(frozen=True)
