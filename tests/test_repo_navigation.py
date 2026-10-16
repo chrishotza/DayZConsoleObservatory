@@ -32,7 +32,7 @@ class RepositoryNavigationTests(unittest.TestCase):
                 self.assertTrue(path.exists(), msg=name)
 
     def test_machine_index_ci_matrix_matches_workflow(self):
-        """Machine-readable platform claims must match actual CI, not go stale."""
+        """Platform claims in the machine index match GitHub Actions jobs."""
         index = json.loads((ROOT / "project-index.json").read_text(encoding="utf-8"))
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         expected = set(index["validation"]["github_actions"])
@@ -40,33 +40,13 @@ class RepositoryNavigationTests(unittest.TestCase):
         for job, runner in (("unit-tests", "ubuntu"), ("windows-smoke", "windows"),
                             ("macos-smoke", "macos")):
             header = "  " + job + ":\n"
-            self.assertIn(header, workflow, msg=job)
-            # Only split at another two-space job header, not at its indented YAML contents.
-            section = re.split(r'(?m)^  [A-Za-z0-9_-]+:\s*
+            self.assertIn(header, workflow)
+            # Split only at another job header, not indented YAML content.
+            section = re.split(r'(?m)^  [A-Za-z0-9_-]+:\s*$', workflow.split(header, 1)[1], maxsplit=1)[0]
             self.assertIn("runs-on: " + runner + "-latest", section)
-            matrix = re.search(r'python-version:\s*\[([^\]]+)\]', section)
-            self.assertIsNotNone(matrix, msg=job)
-            versions = re.findall(r'"(\d+\.\d+)"', matrix.group(1))
-            self.assertTrue(versions, msg=job)
-            actual.update(runner + " Python " + version for version in versions)
-        self.assertEqual(actual, expected)
-
-    def test_ai_entrypoint_is_small_and_has_critical_truth_claims(self):
-        agent = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertLess(len(agent.encode("utf-8")), 8192)
-        for phrase in ("Nitrado", "UNVERIFIED", "loopback", "synthetic", "Windows"):
-            self.assertIn(phrase.lower(), agent.lower())
-        for name in ("README.md", "README.es.md", "docs/INDEX.md",
-                     "docs/GUI_GUIDE.md", "START_HERE.cmd", "launcher.py"):
-            self.assertTrue((ROOT / name).exists())
-
-if __name__ == "__main__":
-    unittest.main()
-, workflow.split(header, 1)[1], maxsplit=1)[0]
-            self.assertIn("runs-on: " + runner + "-latest", section)
-            matrix = re.search(r'python-version:\s*\[([^\]]+)\]', section)
-            self.assertIsNotNone(matrix, msg=job)
-            versions = re.findall(r'"(\d+\.\d+)"', matrix.group(1))
+            match = re.search(r'python-version:\s*\[([^\]]+)\]', section)
+            self.assertIsNotNone(match, msg=job)
+            versions = re.findall(r'"(\d+\.\d+)"', match.group(1))
             self.assertTrue(versions, msg=job)
             actual.update(runner + " Python " + version for version in versions)
         self.assertEqual(actual, expected)
