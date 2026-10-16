@@ -1,12 +1,14 @@
 # Contributing
 
-Issues and pull requests are welcome. The priority is reliability, security, transparency and Xbox/Microsoft compatibility.
+Thanks for helping improve DayZ Console Observatory. A DayZ copy or Nitrado account is **not** required for most code contributions.
 
-1. Reproduce changes with synthetic ADM fixtures, not real player identities.
-2. Run `python -m unittest discover -s tests -v` before opening a PR.
-3. Document evidence for provider-specific features, with dates, source paths and API permissions.
-4. Do not submit any injector, client memory reader, anticheat bypass, or undocumented live-player manipulation.
-5. Do not promise real-time coordinates from five-minute logs.
-6. No third-party game assets or map tiles without license verification.
+**Quick entry:** [AI/dev map](AGENTS.md) · [Docs index](docs/INDEX.md) · [Browser GUI guide](docs/GUI_GUIDE.md).
 
-This is an unofficial community project and is not affiliated with Microsoft, Bohemia Interactive, Nitrado or BattlEye.
+1. Pick one area from `project-index.json`, then read only its corresponding source and test.
+2. Reproduce bugs with **synthetic** ADM fixtures (never post real players' IDs or positions).
+3. Run `python -m unittest discover -s tests -v` and `python launcher.py --check`.
+4. Use a focused PR with the problem, reproduction, fix, added regression, and any documentation impact.
+5. Respect security invariants in [SECURITY.md](SECURITY.md) and [AGENTS.md](AGENTS.md). Do not add unauthorized client game-state manipulation, anticheat circumvention or proprietary map files.
+6. Never claim that a simulated Nitrado response proves real Xbox service compatibility.
+
+The maintainer has **not authorized public outreach** yet. Issues/PRs may be prepared without sending promotional messages.

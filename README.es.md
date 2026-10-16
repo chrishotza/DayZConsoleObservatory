@@ -1,101 +1,43 @@
 # DayZ Console Observatory
 
-Herramienta **gratuita, abierta e independiente** para supervisar servidores comunitarios de **DayZ Microsoft Store PC / Xbox** sin modificar el cliente del juego.
+**Panel privado y gratuito para analizar registros de servidores comunitarios DayZ Xbox / Microsoft Store.** Código abierto bajo MIT, independiente de Bohemia, Nitrado y Microsoft.
 
-> **Versión 0.7.0, experimental.** El parser, SQLite y el panel local han superado pruebas offline. El conector con Nitrado todavía no ha sido probado con un servidor real de un administrador. No automatiza sanciones.
+[Guía visual](docs/GUI_GUIDE.md) · [Mapa para IA](AGENTS.md) · [Índice de documentación](docs/INDEX.md) · [English](README.md)
 
-## Funciones que ya incluye
+> **v0.8.0 — versión experimental.** El panel y las pruebas simuladas funcionan sin tener DayZ. **La conexión con un servidor Nitrado real todavía no fue validada.** No ofrece ESP en vivo, invisibilidad, cámara libre ni teleportación dentro del juego.
 
-- Importación de registros `.ADM` con posiciones, conexiones, desconexiones y algunos eventos.
-- Conservación de registros desconocidos para ampliar el parser.
-- Historial SQLite con detección de duplicados, líneas incompletas y rotaciones básicas.
-- Gráfico X/Z local de las **últimas posiciones registradas**, no posiciones en vivo.
-- Panel para revisar eventos administrativos y seleccionar un jugador para investigar su historial, posiciones y sesiones registradas.
-- Comando `dayz-observe investigate ID_JUGADOR --db observatory.db` para exportar un historial JSON.
-- Sincronización Nitrado de solo lectura para `dayzxb`: varios ADM recientes, caché SHA-256/metadatos, modo vista previa y reintentos HTTP limitados. El lector remoto de rangos `seek` aún no está implementado.
+## Abrir el panel sin comandos
 
-## Beta comunitaria: buscamos administradores voluntarios
+1. Instalá **Python 3.10 o superior**, descargá y descomprimí el repositorio completo.
+2. En **Windows, hacé doble clic en `START_HERE.cmd`**. Se abrirá tu navegador en una dirección local. No hace falta instalar bibliotecas con pip.
+3. Tocá **Launch interactive demo** para ver un ejemplo con jugadores ficticios, separado de los datos auténticos.
+4. O seleccioná **Choose .ADM file → Import file** para cargar un registro de administrador desde tu PC, sin subirlo a internet.
+5. Explorá posiciones históricas, eventos, jugadores e incidentes agrupados por horario.
 
-Buscamos **3 a 5 dueños de servidores Xbox/Microsoft con Nitrado**. No necesitamos tokens, IDs ni registros privados. Podés probar sin DayZ con `dayz-observe beta-report --db observatory.db`; si sos dueño de un servidor, `dayz-observe nitrado TU_ID --probe` verifica metadatos **sin descargar logs** ni mostrar identificadores.
+En macOS/Linux podés abrirlo con `python3 launcher.py`. El panel solo escucha en `127.0.0.1`. Los archivos quedan en la carpeta de datos de usuario (`%LOCALAPPDATA%\DayZConsoleObservatory` en Windows). **No publiques ese puerto:** los registros reales pueden contener nombres, identificadores y coordenadas.
 
-Seguí la [guía en español](docs/BETA_COMUNITARIA.es.md) y enviá tu [reporte a GitHub](https://github.com/chrishotza/DayZConsoleObservatory/issues/new/choose). La compatibilidad real con Nitrado todavía requiere validación independiente.
+## Estado de funciones
 
+| Disponible hoy | No disponible todavía |
+| --- | --- |
+| Aplicación web local y demo separada | Instalador .exe independiente de Python |
+| Importación de ADM desde el navegador (hasta 8 MiB) | ESP en tiempo real y mapa de terreno oficial |
+| Posiciones registradas, eventos e investigación histórica | Teleport, invisibilidad, espectador dentro del juego |
+| Copias de SQLite, informes y controles de privacidad | Integración Nitrado real validada y permisos de Bohemia |
 
-## Comunidad de GitHub: ayudanos sin tener DayZ
+Las posiciones registradas pueden estar separadas por varios minutos. No indican dónde está alguien ahora ni prueban trampas por sí solas.
 
-Ejecutá **dayz-observe selftest** para comprobar todo el flujo con un Nitrado simulado, sin cuenta ni juego instalado. Podés colaborar con pruebas en Windows, mejoras de accesibilidad, traducciones o registros ADM sintéticos. Consultá nuestra [guía de colaboración](docs/COMMUNITY_ROADMAP.md) y los [Issues](https://github.com/chrishotza/DayZConsoleObservatory/issues). **Esta simulación todavía no demuestra compatibilidad con Nitrado real.**
+## Para administradores avanzados e IAs
 
-
-## Monitorización continua en primer plano (experimental)
-
-Tras comprobar el servicio con `--probe`, podés ejecutar:
-
-~~~powershell
-$env:NITRADO_TOKEN = "<tu-token-local>"
-dayz-observe nitrado TU_ID --watch --dry-run --cycles 2
-dayz-observe nitrado TU_ID --watch --interval 300
-~~~
-
-El programa consulta como máximo una vez cada 300 segundos de forma predeterminada (mínimo 60), detiene las peticiones después de tres ciclos consecutivos con errores y solo muestra conteos anónimos. Se detiene con Ctrl+C. No obtiene coordenadas en vivo. La compatibilidad real con Nitrado sigue sin comprobarse. Ver [guía de operación](docs/WATCH_MODE.md).
-
-
-## Exportación de casos y privacidad (v0.5.1)
-
-El comando `dayz-observe case ID_JUGADOR --db observatory.db --out resumen.json` crea un **informe agregado sin identidades** de forma predeterminada. Para incluir registros privados completos en un archivo local, agregá explícitamente `--private` y no lo compartas públicamente. Nunca sobrescribe archivos existentes. Ver [guía de evidencia](docs/CASE_EVIDENCE.md). Se detectan además reescrituras ADM in situ mediante SHA-256.
-
-## Investigador de incidentes por horario (v0.6.0)
-
-El panel local ahora muestra **Incident timeline** para agrupar eventos ADM cercanos en el tiempo. El intervalo se interpreta según el reloj del servidor y no implica que los jugadores hayan interactuado.
-
-~~~powershell
-dayz-observe incidents 2026-10-15T12:00:00 2026-10-15T12:30:00 --db observatory.db --out resumen.json
-~~~
-
-El archivo predeterminado contiene solamente conteos sin identidades. `--player-id ID` busca intervalos donde aparece ese jugador, incluyendo el contexto de otros jugadores. Usá `--private` únicamente para revisar información identificable localmente. La búsqueda marca resultados truncados y excluye eventos sin fecha. Consultá [la guía de incidentes](docs/INCIDENT_INVESTIGATION.md).
-
-## Integridad, respaldos y retención local (v0.7.0)
-
-Ahora podés examinar SQLite sin divulgar datos de jugadores, crear respaldos consistentes y simular la eliminación de registros antiguos:
-
-~~~powershell
-dayz-observe doctor --db observatory.db
-dayz-observe backup --db observatory.db --out respaldo-privado.sqlite
-dayz-observe retain --db observatory.db --server MI_SERVIDOR --before 2026-10-01T00:00:00
-~~~
-
-`retain` **solo simula por defecto**. Para ejecutar la eliminación lógica en la base local se requiere `--apply --confirm-server MI_SERVIDOR`. No modifica Nitrado ni elimina originales ADM, respaldos ni necesariamente rastros en WAL/espacio libre SQLite. Los archivos de respaldo pueden contener datos privados. Ver [operaciones locales seguras](docs/LOCAL_DATA_OPERATIONS.md).
-
-## Comenzar con datos de demostración
-
-Necesitás Python 3.10 o superior.
+El motor de Python mantiene comandos opcionales para análisis y diagnósticos. Para ejecutar la simulación integral sin internet:
 
 ```bash
 python -m pip install -e .
-dayz-observe ingest samples/SYNTHETIC_dayz.ADM --db observatory.db
-dayz-observe dashboard --db observatory.db
+dayz-observe selftest
 ```
 
-Abrí `http://127.0.0.1:8765` en tu navegador. Seleccioná un jugador en el panel de eventos para consultar su historial. Una sesión sin desconexión registrada **no demuestra** que el jugador esté conectado.
+Consultá [AGENTS.md](AGENTS.md), [project-index.json](project-index.json), [docs/INDEX.md](docs/INDEX.md) y [docs/NITRADO_VALIDATION.md](docs/NITRADO_VALIDATION.md).
 
-## Investigar tu servidor Nitrado (opcional)
+No compartas tokens Nitrado, registros ADM/RPT reales, bases privadas ni identificadores de jugadores en GitHub. El navegador no solicita ni almacena contraseñas o tokens Nitrado.
 
-El token debe configurarse en una variable de entorno de tu computadora. **Nunca lo publiques ni lo compartas.** En PowerShell:
-
-```powershell
-$env:NITRADO_TOKEN = "<tu-token>"
-dayz-observe nitrado 12345678 --list-only
-```
-
-Reemplazá `12345678` por el ID de tu servicio. La primera operación solo lista archivos. Si se confirma que funciona en tu servicio:
-
-```powershell
-dayz-observe nitrado 12345678 --dry-run --out private-logs --db observatory.db
-dayz-observe nitrado 12345678 --out private-logs --db observatory.db
-dayz-observe dashboard --db observatory.db --server 12345678
-```
-
-La segunda sincronización puede reutilizar los archivos locales si Nitrado informa tamaño y fecha válidos. Usá `--max-files 8` para ampliar el historial, `--force` para revalidar y `--include-rpt` solo si necesitás manejar datos sensibles. Consultá [docs/NITRADO_VALIDATION.md](docs/NITRADO_VALIDATION.md).
-
-**Limitaciones importantes:** Los logs normalmente registran posiciones de jugadores cada cinco minutos. No equivalen a ESP en tiempo real, cámara libre, invisibilidad ni teletransporte. La versión Microsoft/Xbox no admite mods de Steam y este programa no intenta evadir el anticheat. Tampoco incluye imágenes oficiales de mapas que no tengamos permiso de reutilizar.
-
-Podés colaborar con pruebas, mejoras del parser, traducciones y nuevas integraciones documentadas. Revisá [README.md](README.md) y [SECURITY.md](SECURITY.md) para detalles técnicos y privacidad.
+La herramienta es independiente y no cuenta con aprobación o patrocinio oficial.

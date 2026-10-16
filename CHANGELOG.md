@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0 — 2026-10-16
+
+- Rebuilt browser workspace with a clear first-run flow, private local ADM upload and isolated synthetic demonstration.
+- Added the Windows double-click launcher (`START_HERE.cmd`) and a dependency-free Python browser launcher.
+- Added local upload CSRF/Origin/Host controls, strict filename/content-length bounds and browser HTTP regressions.
+- Created a compact root README, structured machine-readable project index, AI-first navigation, and a single linked documentation index.
+- UI provides historical records only. Live Xbox Nitrado service compatibility and in-game spectator controls remain unverified/unimplemented.
+
+
+
 ## 0.7.0 — 2026-10-15
 
 - Added read-only SQLite health checks with aggregate-only diagnostics.

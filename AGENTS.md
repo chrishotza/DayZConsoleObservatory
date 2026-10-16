@@ -1,66 +1,50 @@
-# Engineering handoff · DayZ Console Observatory (v0.6.0)
+# AI_START_HERE · DayZ Console Observatory v0.8.0
 
-**Purpose:** source-first, local-only analysis for DayZ Microsoft Store PC / Xbox Nitrado community servers. MIT, independent and unaffiliated. Maintain documented limits; do not claim in-game ESP, freecam, invisibility, teleportation or verified live Nitrado integration.
+**Read this first (target: under 1 minute).** Source: `src/dayz_observatory/`. `project-index.json` is the machine-readable map. Do not read the whole repo before choosing a task.
 
-## Minimal entrypoints
+## Context in 4 sentences
 
-- Install offline source: `python -m pip install -e .` (requires Python 3.10+).
-- Core tests: `python -W error::ResourceWarning -m unittest discover -s tests -v`.
-- Simulated Nitrado transport end-to-end: `dayz-observe selftest` (no credentials, no network).
-- Historical sample: `dayz-observe ingest samples/SYNTHETIC_dayz.ADM --db observatory.db`.
-- Local dashboard: `dayz-observe dashboard --db observatory.db` (127.0.0.1 only).
-- CLI reference: `dayz-observe --help`; then `dayz-observe COMMAND --help`.
+This is a **local-first, browser-based** admin-log observability tool for DayZ Microsoft/Xbox. It parses historical ADM events into SQLite, shows a local timeline/map, and exports evidence; a real Xbox Nitrado service is **not yet validated**. There is **no** authorized in-game ESP, teleport, invisibility or freecam. Synthetic test fixtures are not live data.
 
-## Source navigation by intention
+## Fast task router
 
-| Task | Source | Safety invariant |
+| Intent | First file(s) | Tests |
 | --- | --- | --- |
-| Parse ADM logs | `src/dayz_observatory/parser.py` | Positions are `X,Z,altitude`; unrecognized events must not be invented |
-| Import & quality | `store.py` | SQLite isolation, idempotence, complete lines, consumed-prefix SHA-256, no guessed UTC |
-| Player timeline | `investigate.py` | No proof of live presence from an open session |
-| Individual evidence | `casebook.py` | Aggregate-only by default; private output requires `--private` |
-| Temporal incidents | `incidents.py` | Clusters mean time proximity, not causality; cap 2,000 and 48 hours |
-| Local REST/UI | `server.py`, `web/` | Bind loopback only, never expose without access control |
-| Nitrado transport | `nitrado.py` | GET-only; authenticated requests and signed downloads stay separated |
-| Remote sync | `sync.py` | Metadata-based cache, atomic files, RPT opt-in, strict destinations |
-| Foreground poll | `watch.py` | Default 300 s, minimum 60 s, 3 consecutive errors halt |
-| Anonymous diagnostics | `beta.py`, `selftest.py` | No identifying metadata or hidden telemetry |
-| Entrypoints | `cli.py`, `pyproject.toml` | Consistent CLI flags/version and safe default disclosure |
+| Browser workflows, demo, ADM upload | `server.py`, `web/app.js`, `web/index.html` | `test_browser_import.py`, `test_http.py`, `test_ui_contract.py` |
+| Windows double-click launch | `launcher.py`, `START_HERE.cmd` | `test_launcher.py`, Windows GitHub Actions |
+| Parse event grammar | `parser.py` | `test_parser.py` |
+| SQLite append, rotation, quality | `store.py` | `test_store.py`, `test_windows_file_identity.py` |
+| Player investigations | `investigate.py`, `casebook.py` | `test_investigate.py`, `test_casebook.py` |
+| Temporal incidents | `incidents.py` | `test_incidents.py` |
+| Nitrado GET API, download | `nitrado.py`, `sync.py`, `watch.py` | `test_nitrado.py`, `test_sync.py`, `test_watch.py` |
+| Offline reproducible test | `selftest.py`, `beta.py` | `test_selftest.py`, `test_beta.py` |
+| SQLite backup, retention, doctor | `maintenance.py` | `test_maintenance.py`, `test_maintenance_cli.py` |
+| CLI and version | `cli.py`, `pyproject.toml`, `__init__.py` | focused CLI tests |
 
-Tests live in `tests/` and run in GitHub Actions for Python 3.10, 3.12 and 3.13. Frontend contract tests use Node if present and static checks otherwise. CI evidence is authoritative; **do not claim passing tests or real-server validation without verifying a completed run**.
+## Verify before editing
 
-## Research/implementation ownership
+```bash
+python -m unittest discover -s tests -v
+python launcher.py --check
+python -m compileall -q src tests launcher.py
+```
 
-- **API & security desk:** official Nitrado endpoints, data limits, auth scope, SSRF/redirect boundary, credential handling.
-- **Scientific methods desk:** sparse player snapshots, sampling uncertainty and false-positive analysis.
-- **Product/UX desk:** local case review, mobile/accessibility, verified coordinate map overlays with legally usable assets.
-- **Parser/forensics desk:** sanitized fixtures, precise source provenance, temporal ordering, audit integrity.
-- **Open-source quality desk:** license review, PR tests, dependency monitoring, error reproduction and docs consistency.
-- **Publisher integration desk:** Bohemia approvals for console in-game admin functions. No API exists in this project to modify live player state.
+GitHub Actions also tests Linux Python 3.10/3.12/3.13 and Windows 3.12. **A passing test does not validate real Nitrado behavior.**
 
-Claude, Gemini and Grok may contribute independently with explicitly shared evidence; **do not claim a model, plugin, team or publisher was contacted unless a real tool action succeeded**.
+## Security invariants
 
-## Red lines & verification gates
+1. The HTTP server binds only `127.0.0.1`; no CORS. Browser mutations require same-Origin, exact Host and a custom header. No remote/admin authentication is implemented. Never expose the port.
+2. Demo uses `__dayz_synthetic_demo__`, separate from local records; the UI must make this visible. User uploads are bounded at 8 MiB, kept on disk locally and never forwarded to a network service.
+3. Default case and incident exports are aggregate-only. Private identity, coordinates or raw ADM/RPT must never appear in public issues. Fingerprints are consistency checks, not evidence authentication.
+4. ADM timestamps use the server clock, timezone often unknown; 5-minute positions do **not** imply live trajectories or guilt. No automatic punishment.
+5. The Nitrado connector is experimental GET-only with strict signed-download hosts; remote range `seek` is not implemented.
+6. Game-state modification requires a formally authorized Bohemia/platform interface. Do not claim permission, affiliation, or features not implemented.
+7. No unsolicited community/publisher outreach until the repo owner approves it.
 
-1. No player names, service IDs, tokens, signed URLs, precise coordinates, private RPT/ADM or full incident reports in public GitHub Issues/PRs.
-2. Local identifiers are sensitive. `incidents` and `case` default to aggregate-only reports. `--private` is a deliberate confidential action. Hashes are not server attestations.
-3. Never turn anomaly patterns into automated accusations, bans or claims of real-time ESP. Five-minute snapshots do not support live tracking.
-4. Remote file range `seek` is not implemented. Nitrado production compatibility remains **unverified** until a consenting server owner tests it.
-5. Explicit Bohemia/platform permission and a documented server-side interface are required before any in-game spectator, invisibility or teleport integration.
-6. Follow `docs/PRODUCT_STRATEGY.md`, `docs/INCIDENT_INVESTIGATION.md`, `docs/CASE_EVIDENCE.md` and `SECURITY.md` before scope changes.
+## Documentation navigation
 
-## Pull request acceptance
+Read [docs/INDEX.md](docs/INDEX.md) for a human-oriented subject map, [docs/GUI_GUIDE.md](docs/GUI_GUIDE.md) for onboarding, [docs/PRODUCT_STRATEGY.md](docs/PRODUCT_STRATEGY.md) for evidence gates. Use [CHANGELOG.md](CHANGELOG.md) to check versioned claims. No credentials or personal data in commits.
 
-- Run all offline tests on source modifications; add a regression for every defect.
-- Preserve privacy defaults, service isolation, clock assumptions and exact historical provenance.
-- Update English/Spanish docs and `CHANGELOG.md` for visible features.
-- Verify the HEAD commit and completed CI run after GitHub writes.
-- No unsolicited community or company outreach while the project owner has deferred it.
+## Delivery checklist
 
-## v0.7 local data operations
-
-- `maintenance.py`: `doctor` uses read-only SQLite URI and never creates a missing DB.
-- `backup` uses SQLite online backup to a new owner-private filename and verifies `PRAGMA quick_check`; never overwrite or print player data.
-- `retain` previews by default. Applying requires `--apply --confirm-server` exactly matching `--server`, and an explicit exclusive server-local timestamp cutoff. Unknown timestamps and sync source offsets remain untouched.
-- Logical deletion does not securely erase WAL/free pages, private ADM files or backups. Warn users; never market this as guaranteed erasure.
-- Never export database backups to public GitHub issues or include identifiers in doctor/retention JSON.
+Implement code, add reproducible regression tests, update user-visible English and Spanish guidance, and verify the **actual HEAD** GitHub Actions result on all supported environments before claiming success.
