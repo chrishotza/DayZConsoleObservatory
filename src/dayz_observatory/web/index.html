@@ -3,6 +3,7 @@
 <meta name="description" content="Local-only DayZ Console Observatory: import ADM records, explore historical positions, review incidents."/>
 <title>DayZ Console Observatory · Local workspace</title><link rel="stylesheet" href="/style.css"/></head>
 <body>
+<a class="skip-link" href="#workspace">Skip to workspace</a>
 <header class="site-header"><div class="site-header-inner"><a class="brand" href="#home" aria-label="DayZ Observatory Home"><span class="brand-mark">DZ</span><span>CONSOLE <strong>OBSERVATORY</strong></span></a>
 <nav aria-label="Workspace navigation"><a href="#workspace">Workspace</a><a href="#positions">Positions</a><a href="#incidents">Incidents</a></nav><span class="header-pill">● LOCAL · NO GAME CHANGES</span></div></header>
 <main id="home">
@@ -28,7 +29,15 @@
 <section class="quality" aria-label="Evidence quality summary"><div class="quality-title"><span class="eyebrow">DATA INTEGRITY</span><h2>Evidence quality</h2><p>Imported ADM events, not live game telemetry</p></div>
 <div class="quality-metrics"><div><span>POSITION RECORDS</span><strong id="qualityPositions">—</strong></div><div><span>UNDATED EVENTS</span><strong id="qualityUndated">—</strong></div><div><span>UNCLASSIFIED</span><strong id="qualityUnknown">—</strong></div><div><span>LOG SOURCES</span><strong id="qualitySources">—</strong></div></div></section>
 <div class="layout"><section class="panel map-panel" id="positions"><div class="panel-heading"><div><span class="eyebrow">02 / SPATIAL REVIEW</span><h2>Recorded positions</h2><p>Coordinate plane X / Z. This is not a terrain map.</p></div><span class="legend"><span class="dot"></span> Last recorded sample</span></div>
-<canvas id="map" width="950" height="630" role="img" aria-label="Schematic plot of the last imported positions, not live players"></canvas><p class="panel-note">ADM observations are discontinuous, often around five minutes apart. No movement is inferred between points.</p></section>
+<canvas id="map" width="950" height="630" role="img" aria-label="Schematic plot of the last imported positions, not live players" aria-describedby="positionDisclaimers"></canvas>
+<details class="position-details">
+<summary id="positionTableSummary">Read recorded positions as text (0)</summary>
+<div class="table-scroll"><table class="position-table">
+<caption>Last recorded X and Z positions. Historical observations from imported logs, not current player locations.</caption>
+<thead><tr><th scope="col">Player</th><th scope="col">X</th><th scope="col">Z</th><th scope="col">Observed (server clock)</th></tr></thead>
+<tbody id="positionRows"><tr><td colspan="4">No recorded positions.</td></tr></tbody>
+</table></div></details>
+<p class="panel-note" id="positionDisclaimers">ADM observations are discontinuous, often around five minutes apart. No movement is inferred between points.</p></section>
 <section class="panel events-panel"><div class="panel-heading"><div><span class="eyebrow">03 / ACTIVITY</span><h2>Event stream</h2><p id="eventCaption">Imported observations, newest first</p></div>
 <div class="filters"><label for="playerFilter">Player</label><select id="playerFilter"><option value="">All players</option></select><label for="kind">Type</label><select id="kind"><option value="">All types</option><option>position</option><option>connected</option><option>disconnected</option><option>death</option><option>hit</option><option>build</option><option>unknown</option></select></div></div><div class="event-list" id="events"></div></section></div>
 <section class="panel incident-panel" id="incidents" aria-label="Temporal incident investigation"><div class="panel-heading"><div><span class="eyebrow">04 / INVESTIGATE</span><h2>Incident timeline</h2><p>Group events by server-local time. Proximity is not proof of interaction.</p></div>
