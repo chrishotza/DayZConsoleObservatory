@@ -10,7 +10,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        python-version: ["3.10", "3.12", "3.13"]
+        python-version: ["3.10", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -30,8 +30,12 @@ jobs:
         run: python -W error::ResourceWarning -m unittest discover -s tests -v
 
   windows-smoke:
-    name: Windows / Python 3.12 / full offline suite
+    name: Windows / Python ${{ matrix.python-version }} / full offline suite
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
     permissions:
       contents: read
     timeout-minutes: 20
@@ -41,12 +45,14 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
       - name: Install editable package on Windows
         run: python -m pip install -e .
       - name: Run offline synthetic Nitrado end-to-end
         run: |
           dayz-observe --version
           dayz-observe selftest
+      - name: Check oversized Windows filesystem identifiers
+        run: python -W error::ResourceWarning -m unittest discover -s tests -p "test_windows_file_identity.py" -v
       - name: Run complete unit suite on Windows
         run: python -W error::ResourceWarning -m unittest discover -s tests -v
