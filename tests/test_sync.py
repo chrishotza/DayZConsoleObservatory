@@ -1,4 +1,5 @@
 """Offline Nitrado log synchronization verification."""
+import errno
 import os
 import tempfile
 import unittest
@@ -125,16 +126,51 @@ class SyncTests(unittest.TestCase):
         report = self.run_sync()
         self.assertEqual(len(report["errors"]), 1)
 
+    def test_reject_symlink_destination_without_os_privileges(self):
+        """Exercise the real rejection logic even on locked-down Windows runners."""
+        root = self.root / "logs" / "42"
+        root.mkdir(parents=True)
+        destination = root / "log.ADM"
+        original_is_symlink = Path.is_symlink
+
+        def report_link_only(path):
+            if path == destination:
+                return True
+            return original_is_symlink(path)
+
+        with patch.object(Path, "is_symlink", autospec=True, side_effect=report_link_only):
+            report = self.run_sync()
+
+        self.assertEqual(len(report["errors"]), 1)
+        self.assertIn("symlink", report["errors"][0].lower())
+        self.assertNotIn(ROOT + "/log.ADM", self.api.calls)
+        self.assertFalse(destination.exists())
+        self.assertFalse(self.db.exists())
+
     @unittest.skipUnless(hasattr(os, "symlink"), "symlink unavailable")
     def test_reject_symlink_destination(self):
+        """Real OS link test: skip only when the OS denies creating test links."""
         root = self.root / "logs" / "42"
         root.mkdir(parents=True)
         private = self.root / "private.txt"
         private.write_text("original")
-        (root / "log.ADM").symlink_to(private)
+        try:
+            (root / "log.ADM").symlink_to(private)
+        except NotImplementedError:
+            self.skipTest("OS cannot create symlinks")
+        except OSError as exc:
+            # Windows standard accounts commonly lack SeCreateSymbolicLinkPrivilege
+            # (WinError 1314). Never swallow unrelated I/O failures.
+            permitted_skip = (getattr(exc, "winerror", None) == 1314
+                              or exc.errno in (errno.EPERM, errno.EACCES))
+            if permitted_skip:
+                self.skipTest("OS denies creating test symlinks (no user privilege)")
+            raise
         report = self.run_sync()
         self.assertEqual(len(report["errors"]), 1)
+        self.assertIn("symlink", report["errors"][0].lower())
         self.assertEqual(private.read_text(), "original")
+        self.assertNotIn(ROOT + "/log.ADM", self.api.calls)
 
     def test_errors_do_not_leak_tokens(self):
         self.api.fail = True
