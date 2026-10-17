@@ -131,16 +131,16 @@ class SyncTests(unittest.TestCase):
         root = self.root / "logs" / "42"
         root.mkdir(parents=True)
         destination = root / "log.ADM"
-        original_is_symlink = Path.is_symlink
-
-        def report_link_only(path):
-            if path == destination:
-                return True
-            return original_is_symlink(path)
-
-        with patch.object(Path, "is_symlink", autospec=True, side_effect=report_link_only):
+        # Mock the filesystem's classification result, not Path equality:
+        # Windows (and Python 3.14) can normalize/resolve path instances
+        # differently from the original test's guessed path.
+        with patch.object(Path, "is_symlink", return_value=True) as checker:
             report = self.run_sync()
 
+        self.assertTrue(
+            any(call.args and call.args[0].name == "log.ADM" for call in checker.call_args_list),
+            "Synchronization must inspect the destination for symlinks",
+        )
         self.assertEqual(len(report["errors"]), 1)
         self.assertIn("symlink", report["errors"][0].lower())
         self.assertNotIn(ROOT + "/log.ADM", self.api.calls)
