@@ -134,7 +134,15 @@ class SyncTests(unittest.TestCase):
         # Mock the filesystem's classification result, not Path equality:
         # Windows (and Python 3.14) can normalize/resolve path instances
         # differently from the original test's guessed path.
-        with patch.object(type(destination), "is_symlink", autospec=True, return_value=True) as checker:
+        original_is_symlink = type(destination).is_symlink
+
+        def classify(path):
+            # The sync state file should still be checked normally.
+            # Filename identity is stable across Windows drive resolution.
+            return path.name == "log.ADM" or original_is_symlink(path)
+
+        with patch.object(type(destination), "is_symlink", autospec=True,
+                          side_effect=classify) as checker:
             report = self.run_sync()
 
         self.assertTrue(
