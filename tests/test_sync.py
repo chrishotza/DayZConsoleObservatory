@@ -134,7 +134,7 @@ class SyncTests(unittest.TestCase):
         # Mock the filesystem's classification result, not Path equality:
         # Windows (and Python 3.14) can normalize/resolve path instances
         # differently from the original test's guessed path.
-        with patch.object(Path, "is_symlink", autospec=True, return_value=True) as checker:
+        with patch.object(type(destination), "is_symlink", autospec=True, return_value=True) as checker:
             report = self.run_sync()
 
         self.assertTrue(
