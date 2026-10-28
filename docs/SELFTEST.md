@@ -32,3 +32,5 @@ A suite ending in `OK (skipped=N)` is a valid result when the skipped tests requ
 ### Strict ResourceWarning checks (Windows and other platforms)
 
 The read-only Nitrado adapter now closes HTTP error response streams before retrying (429/503) or surfacing an API/download error. The offline regressions exercise these paths with in-memory response bodies; no real network is used. For independent verification, run `python -W error::ResourceWarning -m unittest discover -s tests -p test_nitrado.py -v` as well as the full strict suite. If the interpreter prints an unraisable warning even with exit 0, report it separately with the Python version and sanitized traceback; exit 0 alone does not prove that finalizer warnings are absent.
+
+**Strict-suite note:** The browser and HTTP tests also close expected local HTTP 4xx error bodies before checking status, avoiding unraisable warnings on strict Python 3.14. The CI exit code by itself is insufficient; check logs for `Implicitly cleaning up` as well.
