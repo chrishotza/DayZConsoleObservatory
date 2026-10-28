@@ -28,3 +28,7 @@ For issue #5, the integration suite now has **two complementary tests**:
 - `test_reject_symlink_destination` attempts a real OS symlink. It **skips only** if symlink creation is unsupported or denied by system permissions; on capable systems it verifies that the protected file is untouched.
 
 A suite ending in `OK (skipped=N)` is a valid result when the skipped tests require unavailable OS features. There is **no need to run as administrator, enable Developer Mode, or change permissions to test the tool**. Please include the number of skips in a sanitized issue report. A failure other than permission-denied or unsupported-link creation is not silently skipped.
+
+### Strict ResourceWarning checks (Windows and other platforms)
+
+The read-only Nitrado adapter now closes HTTP error response streams before retrying (429/503) or surfacing an API/download error. The offline regressions exercise these paths with in-memory response bodies; no real network is used. For independent verification, run `python -W error::ResourceWarning -m unittest discover -s tests -p test_nitrado.py -v` as well as the full strict suite. If the interpreter prints an unraisable warning even with exit 0, report it separately with the Python version and sanitized traceback; exit 0 alone does not prove that finalizer warnings are absent.
