@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Close expected loopback HTTP error responses in browser/HTTP tests to prevent unraisable ResourceWarnings under strict Windows Python 3.14 test runs (HTTP 400/403/404/415).
+- Close Nitrado HTTP error response bodies on retries, terminal API errors and signed-download failures, avoiding unraisable Python 3.14 `ResourceWarning` on simulated HTTP 429 and preserving existing file rollback/security behavior.
+- Added offline regression coverage for response cleanup on HTTP 429/503/403 and failed signed downloads; independent Windows/macOS validation remains separate from CI.
 - Browser import now reports a count of unfinished trailing-line bytes, without exposing log text. Pending lines remain uncommitted until reimported after completion.
 - Hardened synthetic-tested ADM parser: reject invalid header dates/times and non-finite coordinates without fabricating observations.
 - Avoid false death/combat/building matches from keywords embedded within other words, while preserving unknown timestamped records.

@@ -1,5 +1,6 @@
 """Real loopback HTTP tests, never internet and never a DayZ client."""
 import json
+from contextlib import closing
 import tempfile
 import threading
 import unittest
@@ -57,7 +58,8 @@ class HTTPTests(unittest.TestCase):
     def test_bad_player_query_is_rejected(self):
         with self.assertRaises(urllib.error.HTTPError) as error:
             self.get('/api/investigate?player_id=')
-        self.assertEqual(error.exception.code,400)
+        with closing(error.exception) as response:
+            self.assertEqual(response.code, 400)
 
     def test_incidents_api_defaults_to_aggregate_only(self):
         url = ('/api/incidents?start=2026-10-15T12%3A00%3A00'
@@ -80,12 +82,14 @@ class HTTPTests(unittest.TestCase):
     def test_incidents_api_invalid_window_returns_400(self):
         with self.assertRaises(urllib.error.HTTPError) as error:
             self.get('/api/incidents?start=invalid&end=2026-10-15T12%3A30%3A00')
-        self.assertEqual(error.exception.code, 400)
+        with closing(error.exception) as response:
+            self.assertEqual(response.code, 400)
 
     def test_unrecognized_path_is_rejected(self):
         with self.assertRaises(urllib.error.HTTPError) as error:
             self.get('/api/private-logs')
-        self.assertEqual(error.exception.code,404)
+        with closing(error.exception) as response:
+            self.assertEqual(response.code, 404)
 
     def test_ui_served_with_security_headers(self):
         with self.get('/') as response:

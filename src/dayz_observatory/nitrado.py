@@ -75,8 +75,13 @@ class NitradoClient:
                         raise NitradoError("Unexpected API response shape")
                     return data
             except urllib.error.HTTPError as exc:
-                if exc.code in (429, 503) and attempt == 0:
-                    retry_after = exc.headers.get("Retry-After", "") if exc.headers else ""
+                # urllib.error.HTTPError owns a response stream that MUST be
+                # closed, even when we retry. Otherwise Python 3.14 can emit
+                # an unraisable ResourceWarning on garbage collection.
+                status = exc.code
+                retry_after = exc.headers.get("Retry-After", "") if exc.headers else ""
+                exc.close()
+                if status in (429, 503) and attempt == 0:
                     try:
                         delay = max(1, int(retry_after)) if retry_after else 1
                     except (TypeError, ValueError):
@@ -84,7 +89,7 @@ class NitradoClient:
                     if delay <= 5:
                         time.sleep(delay)
                         continue
-                raise NitradoError(f"Nitrado API HTTP {exc.code} while reading {path}") from None
+                raise NitradoError(f"Nitrado API HTTP {status} while reading {path}") from None
             except (urllib.error.URLError, OSError, ValueError) as exc:
                 raise NitradoError(f"Nitrado API unavailable: {exc.__class__.__name__}") from None
         raise NitradoError("Nitrado API request retries exhausted")
@@ -185,7 +190,9 @@ class NitradoClient:
             os.replace(name, destination)
             return destination
         except urllib.error.HTTPError as exc:
-            raise NitradoError(f"Nitrado log download HTTP {exc.code}") from None
+            status = exc.code
+            exc.close()
+            raise NitradoError(f"Nitrado log download HTTP {status}") from None
         except (urllib.error.URLError, OSError) as exc:
             raise NitradoError(f"Nitrado log download unavailable: {exc.__class__.__name__}") from None
         finally:

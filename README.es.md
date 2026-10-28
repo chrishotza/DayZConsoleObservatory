@@ -34,7 +34,10 @@ El motor de Python mantiene comandos opcionales para análisis y diagnósticos. 
 ```bash
 python -m pip install -e .
 dayz-observe selftest
+python -W error::ResourceWarning -m unittest discover -s tests -v
 ```
+
+Las pruebas son **simuladas y sin conexión**. La corrección de limpieza de respuestas HTTP 429/503 cierra los recursos antes de reintentar; si aparece un aviso `ResourceWarning` aun cuando el resultado sea `OK`, informalo en la [issue #5](https://github.com/chrishotza/DayZConsoleObservatory/issues/5) con tu versión de Python y un resumen sin datos privados.
 
 Consultá [AGENTS.md](AGENTS.md), [project-index.json](project-index.json), [docs/INDEX.md](docs/INDEX.md) y [docs/NITRADO_VALIDATION.md](docs/NITRADO_VALIDATION.md).
 
