@@ -1,5 +1,6 @@
 """Browser workflow tests: true HTTP POST, no internet or DayZ installation."""
 import json
+from contextlib import closing
 import tempfile
 import threading
 import unittest
@@ -103,7 +104,8 @@ class BrowserImportTests(unittest.TestCase):
                        {"host": "evil.example"}):
             with self.subTest(kwargs=kwargs), self.assertRaises(urllib.error.HTTPError) as ctx:
                 self.post("/api/demo", **kwargs)
-            self.assertEqual(ctx.exception.code, 403)
+            with closing(ctx.exception) as response:
+                self.assertEqual(response.code, 403)
         self.assertFalse(self.db.exists())
 
     def test_rejects_path_traversal_and_non_adm(self):
@@ -111,12 +113,14 @@ class BrowserImportTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(urllib.error.HTTPError) as ctx:
                 self.post("/api/import?name=" + urllib.parse.quote(name), b"data\n",
                           content_type="application/octet-stream")
-            self.assertEqual(ctx.exception.code, 400)
+            with closing(ctx.exception) as response:
+                self.assertEqual(response.code, 400)
 
     def test_rejects_large_and_wrong_media(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self.post("/api/import?name=x.ADM", b"x", content_type="text/plain")
-        self.assertEqual(ctx.exception.code, 415)
+        with closing(ctx.exception) as response:
+            self.assertEqual(response.code, 415)
         # Send only headers claiming an oversized body. The server must return
         # HTTP 413 before reading bytes. Sending 8+ MiB then receiving an early
         # rejection causes BrokenPipe/WinError 10053 on some operating systems.
@@ -151,7 +155,8 @@ class BrowserImportTests(unittest.TestCase):
             self.url + "/api/players", headers={"Host": "remote.example"})
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             urllib.request.urlopen(request, timeout=3)
-        self.assertEqual(ctx.exception.code, 403)
+        with closing(ctx.exception) as response:
+            self.assertEqual(response.code, 403)
 
     def test_browser_onboarding_controls_exist(self):
         with urllib.request.urlopen(self.url, timeout=3) as response:
@@ -166,7 +171,8 @@ class BrowserImportTests(unittest.TestCase):
     def test_unknown_route_is_not_a_write_operation(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self.post("/api/settings", b"{}", content_type="application/octet-stream")
-        self.assertEqual(ctx.exception.code, 404)
+        with closing(ctx.exception) as response:
+            self.assertEqual(response.code, 404)
 
 
 if __name__ == "__main__":
