@@ -128,6 +128,40 @@ class NitradoTests(unittest.TestCase):
         self.assertEqual(opened.call_count, 2)
         sleep.assert_called_once_with(1)
 
+    def test_http_error_response_stream_closed_on_retry_and_terminal_error(self):
+        # A real HTTPError has its own response body, unlike errors with fp=None.
+        for status in (429, 503):
+            with self.subTest(retry_status=status):
+                body = io.BytesIO(b'opaque API error response')
+                error = urllib.error.HTTPError(
+                    'https://api.nitrado.net/any', status, 'Retry', {'Retry-After': '1'}, body)
+                with patch.object(self.client, '_open', side_effect=[
+                        error, FakeResponse(b'{"data":{}}')]), \
+                     patch('dayz_observatory.nitrado.time.sleep'):
+                    self.assertEqual(self.client._json('/services/1/gameservers'), {'data': {}})
+                self.assertTrue(body.closed, 'retry must close the rejected HTTP response')
+
+        body = io.BytesIO(b'opaque forbidden error response')
+        error = urllib.error.HTTPError(
+            'https://api.nitrado.net/any', 403, 'Forbidden', {}, body)
+        with patch.object(self.client, '_open', side_effect=error):
+            with self.assertRaisesRegex(NitradoError, 'HTTP 403'):
+                self.client._json('/services/1/gameservers')
+        self.assertTrue(body.closed, 'terminal HTTP errors must close their response')
+
+    def test_download_http_error_stream_closed_without_file_corruption(self):
+        self.dest.write_bytes(b'original')
+        body = io.BytesIO(b'opaque signed-download error response')
+        error = urllib.error.HTTPError(
+            'https://files.nitrado.net/download', 429, 'Too Many Requests', {}, body)
+        with patch.object(self.client, '_json', return_value=self.token_response), \
+             patch.object(self.client, '_open', side_effect=error):
+            with self.assertRaisesRegex(NitradoError, 'download HTTP 429'):
+                self.client.download_log(123, FILE, self.dest, ROOT)
+        self.assertTrue(body.closed, 'download failures must close their HTTP response')
+        self.assertEqual(self.dest.read_bytes(), b'original')
+        self.assertEqual(list(self.dest.parent.glob('*.part')), [])
+
     def test_download_validates_host(self):
         bad = ('https://evil.com/file', 'https://nitrado.net.evil.com/file',
                'http://nitrado.net/file', 'https://admin:pw@nitrado.net/file',
