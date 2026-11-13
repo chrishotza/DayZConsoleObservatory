@@ -60,6 +60,28 @@ class NitradoTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.client.gameserver(-1)
 
+    def test_service_id_rejects_fractional_boolean_and_malformed_values_before_network(self):
+        invalid = (True, False, 42.9, 1.0, float("nan"), float("inf"),
+                   None, "42.0", " 42", "-1", "+42", "٤٢", "",
+                   "9" * 30, 2**63, 0)
+        with patch.object(self.client, "_json") as remote:
+            for value in invalid:
+                with self.subTest(service_id=repr(value)):
+                    with self.assertRaisesRegex(ValueError, "service_id"):
+                        self.client.gameserver(value)
+            remote.assert_not_called()
+
+    def test_valid_service_id_keeps_existing_numeric_and_decimal_string_contract(self):
+        with patch.object(self.client, "_json",
+                          return_value={"data": {"gameserver": {"game": "dayzxb"}}}) as remote:
+            for value in (42, "42", 2**63 - 1):
+                with self.subTest(service_id=repr(value)):
+                    result = self.client.gameserver(value)
+                    self.assertEqual(result["game"], "dayzxb")
+                    remote.assert_called_with(
+                        f"/services/{int(value)}/gameservers"
+                    )
+
     def test_reject_unsafe_remote_paths_before_api(self):
         paths = ['/secret/OTHER.ADM', ROOT+'/../other.ADM', ROOT+'/subdir/x.ADM', ROOT+'/x.RPT\\evil']
         with patch.object(self.client, '_json') as remote:
