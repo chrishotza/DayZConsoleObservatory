@@ -56,3 +56,8 @@ Passing these tests **does not establish that Nitrado grants the necessary endpo
 ## Reporting vulnerabilities
 
 Follow [SECURITY.md](../SECURITY.md). Never post real tokens, raw live ADM/RPT data, hardware IDs, IP addresses, or personally identifying information in public issues.
+
+
+## Remote metadata resilience
+
+A malformed non-finite numeric `modified_at` value from the provider is not a valid cache signature and is sorted behind known timestamps. Such metadata cannot terminate the entire local read-only sync before other logs are processed. A regression test uses entirely synthetic entries; live Nitrado behavior remains unverified.
