@@ -2,6 +2,7 @@
 from __future__ import annotations
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import tempfile
@@ -24,6 +25,8 @@ def _remote_signature(entry: dict[str, Any]) -> dict[str, str] | None:
     if isinstance(size, bool) or not isinstance(size, (int, str)):
         return None
     if isinstance(modified, bool) or not isinstance(modified, (int, float, str)):
+        return None
+    if isinstance(modified, (int, float)) and not math.isfinite(modified):
         return None
     try:
         numeric_size = int(size)
@@ -70,9 +73,16 @@ def _write_state(path: Path, service_id: int, entries: dict[str, Any]) -> None:
 
 def _order(entry: dict[str, Any]) -> tuple[int, str, str]:
     stamp = entry.get("modified_at")
-    if isinstance(stamp, (int, float)) and not isinstance(stamp, bool):
-        sortable = f"{int(stamp):020d}"
-    else:
+    # External metadata can contain malformed IEEE floats; never allow a
+    # single invalid timestamp to abort the entire read-only synchronization.
+    if isinstance(stamp, bool):
+        stamp = None
+    if isinstance(stamp, (int, float)):
+        if not math.isfinite(stamp):
+            stamp = None
+        else:
+            sortable = f"{int(stamp):020d}"
+    if not isinstance(stamp, (int, float)):
         sortable = str(stamp or "")
     return (int(stamp is not None), sortable, str(entry.get("name") or ""))
 
