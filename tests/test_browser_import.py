@@ -148,11 +148,12 @@ class BrowserImportTests(unittest.TestCase):
         folder = self.root / "private-imports"
         folder.mkdir(mode=0o755)
         folder.chmod(0o755)  # Simulate a folder from older releases.
-        data = (b"AdminLog started on 2026-10-15 at 12:00:00\\n"
-                b"12:00:01 | synthetic observation\\n")
+        data = (b"AdminLog started on 2026-10-15 at 12:00:00\n"
+                b"12:00:01 | synthetic observation\n")
         with self.post("/api/import?name=local.ADM", data,
                        content_type="application/octet-stream") as response:
             self.assertEqual(response.status, 200)
+            self.assertEqual(json.load(response)["new_events"], 1)
         self.assertEqual(stat.S_IMODE(folder.stat().st_mode), 0o700)
         stored = list(folder.glob("*.ADM"))
         self.assertEqual(len(stored), 1)
