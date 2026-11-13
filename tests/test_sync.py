@@ -192,6 +192,17 @@ class SyncTests(unittest.TestCase):
         self.assertIsNone(_remote_signature({"size": 7, "modified_at": None}))
         self.assertEqual(_remote_signature({"size": "7", "modified_at": "today"})["size"], "7")
 
+    def test_nonfinite_remote_timestamp_does_not_abort_sync(self):
+        for invalid in (float("nan"), float("inf"), -float("inf"), True):
+            with self.subTest(modified_at=invalid):
+                bad = self.api.entry("bad.ADM", invalid, SAMPLE)
+                self.api.entries = [bad, self.api.entry("log.ADM", 10, SAMPLE)]
+                self.assertIsNone(_remote_signature(bad))
+                report = self.run_sync(max_files=1, dry_run=True)
+                self.assertEqual(report["selected_files"], 1)
+                self.assertEqual(report["files"][0]["name"], "log.ADM")
+                self.assertFalse(report["errors"])
+
     def test_invalid_file_limit(self):
         for value in (0, -1, 21, True):
             with self.subTest(value=value), self.assertRaises(ValueError):
