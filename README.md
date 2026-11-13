@@ -29,6 +29,13 @@ The browser UI runs exclusively on `127.0.0.1`. Files and SQLite are stored unde
 | Integrity checks, backups, explicit local retention | Automatic moderation or hardware-native bans |
 | Experimental read-only Nitrado API client and foreground polling | Real Xbox/Nitrado service compatibility (still untested) |
 
+**Local import privacy:** Uploaded ADM bytes stay on your computer in the
+`private-imports` folder next to the selected SQLite database. On POSIX
+systems the folder is owner-only (`0700`) and imported files are `0600`;
+pre-existing overly broad folder permissions are tightened. Symlinked import
+folders are rejected. Windows ACL permissions are not independently verified.
+Do not expose the local web server or share the original logs.
+
 ADM coordinates are discrete historical samples, normally around five minutes apart. Sparse samples cannot establish movement between observations or justify automated accusations. The graph is a schematic coordinate plane, not licensed DayZ map imagery.
 
 ## Advanced, optional developer/server-owner commands
