@@ -27,6 +27,14 @@ En macOS/Linux podés abrirlo con `python3 launcher.py`. El panel solo escucha e
 
 Las posiciones registradas pueden estar separadas por varios minutos. No indican dónde está alguien ahora ni prueban trampas por sí solas.
 
+**Privacidad de las importaciones:** Los ADM permanecen en tu equipo,
+en `private-imports` junto a la base SQLite elegida. En sistemas POSIX la
+carpeta se restringe al propietario (`0700`) y cada archivo tiene permisos
+`0600`; también se ajustan carpetas antiguas demasiado abiertas. Se
+rechazan carpetas que sean enlaces simbólicos. La configuración de permisos
+ACL de Windows aún no tiene una auditoría independiente. No publiques el
+servidor local ni compartas los registros.
+
 ## Para administradores avanzados e IAs
 
 El motor de Python mantiene comandos opcionales para análisis y diagnósticos. Para ejecutar la simulación integral sin internet:

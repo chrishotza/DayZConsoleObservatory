@@ -1,5 +1,7 @@
 """Browser workflow tests: true HTTP POST, no internet or DayZ installation."""
 import json
+import os
+import stat
 from contextlib import closing
 import tempfile
 import threading
@@ -138,6 +140,39 @@ class BrowserImportTests(unittest.TestCase):
             response.read()
         finally:
             conn.close()
+
+
+    def test_import_directory_is_owner_only_on_posix(self):
+        if os.name != "posix":
+            self.skipTest("POSIX import-directory mode")
+        folder = self.root / "private-imports"
+        folder.mkdir(mode=0o755)
+        folder.chmod(0o755)  # Simulate a folder from older releases.
+        data = (b"AdminLog started on 2026-10-15 at 12:00:00\n"
+                b"12:00:01 | synthetic observation\n")
+        with self.post("/api/import?name=local.ADM", data,
+                       content_type="application/octet-stream") as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(json.load(response)["new_events"], 1)
+        self.assertEqual(stat.S_IMODE(folder.stat().st_mode), 0o700)
+        stored = list(folder.glob("*.ADM"))
+        self.assertEqual(len(stored), 1)
+        self.assertEqual(stat.S_IMODE(stored[0].stat().st_mode), 0o600)
+
+    def test_import_rejects_symlink_private_import_folder(self):
+        destination = self.root / "other-folder"
+        destination.mkdir()
+        folder = self.root / "private-imports"
+        try:
+            folder.symlink_to(destination, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("Symlink creation unavailable on this platform")
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            self.post("/api/import?name=x.ADM", b"synthetic\\n",
+                      content_type="application/octet-stream")
+        with closing(ctx.exception) as response:
+            self.assertEqual(response.code, 400)
+        self.assertEqual(list(destination.iterdir()), [])
 
     def test_import_does_not_expose_raw_log_in_response(self):
         content = ('AdminLog started on 2026-10-15 at 12:00:00\n'
