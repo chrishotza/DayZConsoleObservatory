@@ -49,10 +49,19 @@ class NitradoClient:
         return self._opener.open(request, timeout=self.timeout)
 
     @staticmethod
-    def _service_id(service_id: int) -> int:
-        value = int(service_id)
-        if value <= 0:
-            raise ValueError("service_id must be positive")
+    def _service_id(service_id: int | str) -> int:
+        # Never round a float or map True to service 1. This identifier
+        # determines which remote account resource receives the read request.
+        if isinstance(service_id, bool):
+            raise ValueError("service_id must be a positive decimal integer")
+        if type(service_id) is int:
+            value = service_id
+        elif isinstance(service_id, str) and re.fullmatch(r"[0-9]{1,19}", service_id):
+            value = int(service_id)
+        else:
+            raise ValueError("service_id must be a positive decimal integer")
+        if not 1 <= value <= (2**63 - 1):
+            raise ValueError("service_id must be a positive decimal integer")
         return value
 
     def _json(self, path: str, params: dict | None = None) -> dict:
