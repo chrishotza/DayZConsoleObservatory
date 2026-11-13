@@ -41,7 +41,17 @@ def _local_import(db_path: str, server: str, name: str, payload: bytes) -> dict:
         raise ValueError("ADM must contain between 1 byte and 8 MiB")
     # Never use a user-supplied filename or server ID as a disk path.
     folder = Path(db_path).expanduser().resolve().parent / "private-imports"
-    folder.mkdir(parents=True, exist_ok=True)
+    # Refuse a pre-existing symlink into another tree. ADM may contain
+    # player identifiers, timestamps and historical coordinates.
+    if folder.is_symlink():
+        raise ValueError("Private import folder must not be a symlink")
+    folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if folder.is_symlink() or not folder.is_dir():
+        raise ValueError("Invalid private import folder")
+    if os.name == "posix":
+        # Tighten folders created by previous releases with a broad umask.
+        # Imported ADM files already use owner-only permissions (0600).
+        folder.chmod(0o700)
     digest = hashlib.sha256((server + "\0" + name).encode("utf-8")).hexdigest()
     target = folder / (digest + ".ADM")
     if target.is_symlink():
